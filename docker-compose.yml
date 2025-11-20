@@ -3,10 +3,17 @@ services:
     build: .
     volumes:
       - .:/app
-      - flutter-pub-cache:/root/.pub-cache
+      - flutter-pub-cache:/home/flutter/.pub-cache
     working_dir: /app
+    ports:
+      - "8080:8080"
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - GRADLE_USER_HOME=/app/.gradle
+      - HOME=/tmp
+      - PUB_CACHE=/tmp/.pub-cache
+    entrypoint: /bin/bash
+    command: ["-c", "git config --global --add safe.directory /sdks/flutter && git config --global --add safe.directory /app && if [ ! -f pubspec.yaml ]; then flutter create --project-name burpeebata .; fi && flutter pub get && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"]
     # For Android device access (optional)
     # devices:
     #   - /dev/bus/usb:/dev/bus/usb

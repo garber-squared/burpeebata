@@ -8,17 +8,11 @@ RUN apt-get update && apt-get install -y \
 # Set JAVA_HOME
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
-# Accept Android licenses
-RUN yes | flutter doctor --android-licenses || true
-
-# Pre-cache Flutter dependencies
-RUN flutter precache
-
 # Create non-root user
 RUN groupadd -r flutter && useradd -r -g flutter -m -d /home/flutter flutter
 
-# Set up Flutter SDK permissions for the new user
-RUN chown -R flutter:flutter /sdks/flutter
+# Set up Flutter SDK permissions - make writable by any user for development
+RUN chmod -R 777 /sdks/flutter
 
 # Create app directory and set ownership
 RUN mkdir -p /app && chown -R flutter:flutter /app
@@ -27,5 +21,11 @@ RUN mkdir -p /app && chown -R flutter:flutter /app
 USER flutter
 
 WORKDIR /app
+
+# Accept Android licenses
+RUN yes | flutter doctor --android-licenses || true
+
+# Pre-cache Flutter dependencies
+RUN flutter precache
 
 ENTRYPOINT ["flutter"]
