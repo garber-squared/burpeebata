@@ -13,7 +13,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  WorkoutConfig _config = const WorkoutConfig();
+  final Map<BurpeeType, WorkoutConfig> _configs = {
+    BurpeeType.militarySixCount: WorkoutConfig.forBurpeeType(BurpeeType.militarySixCount),
+    BurpeeType.navySeal: WorkoutConfig.forBurpeeType(BurpeeType.navySeal),
+  };
+  BurpeeType _selectedType = BurpeeType.militarySixCount;
+
+  WorkoutConfig get _config => _configs[_selectedType]!;
+
+  void _updateConfig(WorkoutConfig newConfig) {
+    setState(() {
+      _configs[_selectedType] = newConfig;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               }).toList(),
-              selected: {_config.burpeeType},
+              selected: {_selectedType},
               onSelectionChanged: (selection) {
                 setState(() {
-                  _config = _config.copyWith(burpeeType: selection.first);
+                  _selectedType = selection.first;
                 });
               },
             ),
@@ -108,9 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
               min: 1,
               max: 30,
               onChanged: (value) {
-                setState(() {
-                  _config = _config.copyWith(repsPerSet: value);
-                });
+                _updateConfig(_config.copyWith(repsPerSet: value));
               },
             ),
             _buildNumberInput(
@@ -119,9 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
               min: 1,
               max: 60,
               onChanged: (value) {
-                setState(() {
-                  _config = _config.copyWith(secondsPerSet: value);
-                });
+                _updateConfig(_config.copyWith(secondsPerSet: value));
               },
             ),
             _buildNumberInput(
@@ -130,9 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
               min: 1,
               max: 20,
               onChanged: (value) {
-                setState(() {
-                  _config = _config.copyWith(numberOfSets: value);
-                });
+                _updateConfig(_config.copyWith(numberOfSets: value));
               },
             ),
             _buildNumberInput(
@@ -141,9 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
               min: 0,
               max: 60,
               onChanged: (value) {
-                setState(() {
-                  _config = _config.copyWith(restBetweenSets: value);
-                });
+                _updateConfig(_config.copyWith(restBetweenSets: value));
               },
             ),
           ],

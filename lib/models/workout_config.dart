@@ -9,11 +9,32 @@ class WorkoutConfig {
 
   const WorkoutConfig({
     this.burpeeType = BurpeeType.militarySixCount,
-    this.repsPerSet = 10,
+    this.repsPerSet = 5,
     this.secondsPerSet = 20,
-    this.numberOfSets = 8,
-    this.restBetweenSets = 10,
+    this.numberOfSets = 10,
+    this.restBetweenSets = 4,
   });
+
+  factory WorkoutConfig.forBurpeeType(BurpeeType type) {
+    switch (type) {
+      case BurpeeType.militarySixCount:
+        return const WorkoutConfig(
+          burpeeType: BurpeeType.militarySixCount,
+          repsPerSet: 5,
+          secondsPerSet: 20,
+          numberOfSets: 10,
+          restBetweenSets: 4,
+        );
+      case BurpeeType.navySeal:
+        return const WorkoutConfig(
+          burpeeType: BurpeeType.navySeal,
+          repsPerSet: 2,
+          secondsPerSet: 15,
+          numberOfSets: 10,
+          restBetweenSets: 13,
+        );
+    }
+  }
 
   WorkoutConfig copyWith({
     BurpeeType? burpeeType,

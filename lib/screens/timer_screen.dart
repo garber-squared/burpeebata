@@ -184,19 +184,29 @@ class _TimerScreenState extends State<TimerScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
+                if (_timerService.state == TimerState.work)
+                  Text(
+                    'Rep ${_timerService.currentRep}/${_timerService.repsPerSet}',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  Text(
+                    '${widget.config.repsPerSet} reps',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                  ),
+                const SizedBox(height: 32),
                 Text(
                   'Set ${_timerService.currentSet} of ${_timerService.totalSets}',
                   style: const TextStyle(
                     fontSize: 24,
                     color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${widget.config.repsPerSet} reps',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
                   ),
                 ),
               ],

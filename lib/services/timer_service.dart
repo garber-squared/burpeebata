@@ -19,6 +19,8 @@ class TimerService extends ChangeNotifier {
   int _totalSets = 0;
   int _workSeconds = 0;
   int _restSeconds = 0;
+  int _repsPerSet = 0;
+  int _lastRep = 0;
   final AudioService _audioService;
 
   static const int _countdownSeconds = 3;
@@ -32,6 +34,23 @@ class TimerService extends ChangeNotifier {
   int get totalSets => _totalSets;
   int get workSeconds => _workSeconds;
   int get restSeconds => _restSeconds;
+  int get repsPerSet => _repsPerSet;
+
+  int get currentRep {
+    if (_state != TimerState.work || _repsPerSet <= 0) {
+      return 0;
+    }
+
+    final elapsedSeconds = _workSeconds - _currentSeconds;
+    final secondsPerRep = _workSeconds / _repsPerSet;
+
+    if (secondsPerRep <= 0) {
+      return 1;
+    }
+
+    final rep = (elapsedSeconds / secondsPerRep).floor() + 1;
+    return rep.clamp(1, _repsPerSet);
+  }
 
   bool get isRunning => _state != TimerState.idle && _state != TimerState.finished;
 
@@ -55,6 +74,7 @@ class TimerService extends ChangeNotifier {
     _totalSets = config.numberOfSets;
     _workSeconds = config.secondsPerSet;
     _restSeconds = config.restBetweenSets;
+    _repsPerSet = config.repsPerSet;
     _currentSet = 1;
 
     _startCountdown();
@@ -72,6 +92,7 @@ class TimerService extends ChangeNotifier {
   void _startWork() {
     _state = TimerState.work;
     _currentSeconds = _workSeconds;
+    _lastRep = 1; // Reset to first rep
     // Play whistle to signal start of work
     _audioService.playWhistle();
     notifyListeners();
@@ -102,6 +123,14 @@ class TimerService extends ChangeNotifier {
       // Play countdown beep in last 3 seconds of work period
       if (_state == TimerState.work && _currentSeconds <= 3) {
         _audioService.playCountdownBeep();
+      }
+      // Play ping sound when rep changes (after first rep)
+      if (_state == TimerState.work && _repsPerSet > 1) {
+        final newRep = currentRep;
+        if (newRep > _lastRep) {
+          _audioService.playPing();
+          _lastRep = newRep;
+        }
       }
       // Play countdown beep in last 3 seconds of rest period
       if (_state == TimerState.rest && _currentSeconds <= 3) {
