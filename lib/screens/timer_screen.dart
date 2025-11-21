@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/workout_config.dart';
 import '../models/workout.dart';
 import '../models/burpee_type.dart';
@@ -23,7 +23,7 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   void initState() {
     super.initState();
-    Wakelock.enable();
+    WakelockPlus.enable();
     _timerService.addListener(_onTimerUpdate);
     _startWorkout();
   }
@@ -34,7 +34,7 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   void dispose() {
-    Wakelock.disable();
+    WakelockPlus.disable();
     _timerService.removeListener(_onTimerUpdate);
     _timerService.dispose();
     super.dispose();

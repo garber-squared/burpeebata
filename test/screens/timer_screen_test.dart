@@ -8,10 +8,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
-    // Mock the Wakelock platform channel
+    // Mock the WakelockPlus platform channel
     TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('github.com/peerrj/flutter_wakelock'),
+      const MethodChannel('wakelock_plus'),
       (MethodCall methodCall) async {
         return true;
       },
@@ -21,7 +21,7 @@ void main() {
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('github.com/peerrj/flutter_wakelock'),
+      const MethodChannel('wakelock_plus'),
       null,
     );
   });

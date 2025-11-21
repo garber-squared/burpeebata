@@ -39,3 +39,6 @@ test:
 
 mocks:
 	docker compose exec flutter flutter pub run build_runner build
+
+build-web:
+	docker compose exec flutter flutter build web --release --verbose
