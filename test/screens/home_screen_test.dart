@@ -24,10 +24,11 @@ void main() {
         final textFields = find.byType(TextFormField);
         expect(textFields, findsNWidgets(4));
 
-        // Check default values (10, 20, 8, 10)
-        expect(find.text('10'), findsNWidgets(2)); // Reps and Rest
+        // Check default values (5, 20, 10, 4)
+        expect(find.text('5'), findsOneWidget); // Reps
         expect(find.text('20'), findsOneWidget); // Seconds
-        expect(find.text('8'), findsOneWidget); // Sets
+        expect(find.text('10'), findsOneWidget); // Sets
+        expect(find.text('4'), findsOneWidget); // Rest
       });
 
       testWidgets('displays plus and minus buttons for each input', (tester) async {
@@ -48,8 +49,8 @@ void main() {
         await tester.tap(addButtons.first);
         await tester.pump();
 
-        // Value should increase from 10 to 11
-        expect(find.text('11'), findsOneWidget);
+        // Value should increase from 5 to 6
+        expect(find.text('6'), findsOneWidget);
       });
 
       testWidgets('does not exceed maximum value', (tester) async {
@@ -69,9 +70,9 @@ void main() {
       testWidgets('disables button at maximum value', (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        // Tap to reach maximum
+        // Tap to reach maximum (from 5 to 30)
         final addButtons = find.byIcon(Icons.add);
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 25; i++) {
           await tester.tap(addButtons.first);
           await tester.pump();
         }
@@ -96,8 +97,9 @@ void main() {
         await tester.tap(removeButtons.first);
         await tester.pump();
 
-        // Value should decrease from 10 to 9
-        expect(find.text('9'), findsOneWidget);
+        // Value should decrease from 5 to 4
+        // Note: '4' appears twice (Reps and Rest both at 4)
+        expect(find.text('4'), findsNWidgets(2));
       });
 
       testWidgets('does not go below minimum value', (tester) async {
@@ -117,9 +119,9 @@ void main() {
       testWidgets('disables button at minimum value', (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        // Tap to reach minimum
+        // Tap to reach minimum (from 5 to 1)
         final removeButtons = find.byIcon(Icons.remove);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
           await tester.tap(removeButtons.first);
           await tester.pump();
         }
@@ -141,8 +143,8 @@ void main() {
         final removeButtons = find.byIcon(Icons.remove);
         final restRemoveButton = removeButtons.at(3);
 
-        // Tap 10 times (default is 10, min is 0)
-        for (int i = 0; i < 10; i++) {
+        // Tap 4 times (default is 4, min is 0)
+        for (int i = 0; i < 4; i++) {
           await tester.tap(restRemoveButton);
           await tester.pump();
         }
@@ -213,7 +215,7 @@ void main() {
         final addButtons = find.byIcon(Icons.add);
         final setsAddButton = addButtons.at(2);
 
-        // Tap to reach maximum (from 8 to 20)
+        // Tap to reach maximum (from 10 to 20)
         for (int i = 0; i < 15; i++) {
           await tester.tap(setsAddButton);
           await tester.pump();
@@ -229,30 +231,30 @@ void main() {
       testWidgets('updates total time when values change', (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        // Initial total: 8 sets * 20 sec + 7 rest * 10 sec = 230 sec = 3:50
-        expect(find.text('3:50'), findsOneWidget);
-        expect(find.text('8 sets \u00d7 10 reps = 80 total reps'), findsOneWidget);
+        // Initial total: 10 sets * 20 sec + 9 rest * 4 sec = 236 sec = 3:56
+        expect(find.text('3:56'), findsOneWidget);
+        expect(find.text('10 sets \u00d7 5 reps = 50 total reps'), findsOneWidget);
 
-        // Increase number of sets from 8 to 9
+        // Increase number of sets from 10 to 11
         final addButtons = find.byIcon(Icons.add);
         final setsAddButton = addButtons.at(2);
         await tester.tap(setsAddButton);
         await tester.pump();
 
-        // New total: 9 sets * 20 sec + 8 rest * 10 sec = 260 sec = 4:20
+        // New total: 11 sets * 20 sec + 10 rest * 4 sec = 260 sec = 4:20
         expect(find.text('4:20'), findsOneWidget);
-        expect(find.text('9 sets \u00d7 10 reps = 90 total reps'), findsOneWidget);
+        expect(find.text('11 sets \u00d7 5 reps = 55 total reps'), findsOneWidget);
       });
 
       testWidgets('updates total reps when reps per set changes', (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        // Increase reps per set from 10 to 11
+        // Increase reps per set from 5 to 6
         final addButtons = find.byIcon(Icons.add);
         await tester.tap(addButtons.first);
         await tester.pump();
 
-        expect(find.text('8 sets \u00d7 11 reps = 88 total reps'), findsOneWidget);
+        expect(find.text('10 sets \u00d7 6 reps = 60 total reps'), findsOneWidget);
       });
     });
   });

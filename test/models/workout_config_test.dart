@@ -9,10 +9,10 @@ void main() {
         const config = WorkoutConfig();
 
         expect(config.burpeeType, equals(BurpeeType.militarySixCount));
-        expect(config.repsPerSet, equals(10));
+        expect(config.repsPerSet, equals(5));
         expect(config.secondsPerSet, equals(20));
-        expect(config.numberOfSets, equals(8));
-        expect(config.restBetweenSets, equals(10));
+        expect(config.numberOfSets, equals(10));
+        expect(config.restBetweenSets, equals(4));
       });
     });
 
@@ -52,8 +52,8 @@ void main() {
     group('totalWorkoutSeconds', () {
       test('calculates total workout time correctly with defaults', () {
         const config = WorkoutConfig();
-        // 8 sets * 20 seconds + 7 rest periods * 10 seconds = 160 + 70 = 230
-        expect(config.totalWorkoutSeconds, equals(230));
+        // 10 sets * 20 seconds + 9 rest periods * 4 seconds = 200 + 36 = 236
+        expect(config.totalWorkoutSeconds, equals(236));
       });
 
       test('calculates correctly with custom values', () {
@@ -80,7 +80,7 @@ void main() {
     group('totalWorkoutDuration', () {
       test('returns correct Duration', () {
         const config = WorkoutConfig();
-        expect(config.totalWorkoutDuration, equals(const Duration(seconds: 230)));
+        expect(config.totalWorkoutDuration, equals(const Duration(seconds: 236)));
       });
 
       test('returns correct Duration for custom config', () {
@@ -97,8 +97,8 @@ void main() {
     group('formattedDuration', () {
       test('formats duration correctly for default config', () {
         const config = WorkoutConfig();
-        // 230 seconds = 3 minutes 50 seconds
-        expect(config.formattedDuration, equals('3:50'));
+        // 236 seconds = 3 minutes 56 seconds
+        expect(config.formattedDuration, equals('3:56'));
       });
 
       test('formats duration with leading zero for seconds', () {

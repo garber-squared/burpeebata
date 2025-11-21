@@ -1,10 +1,10 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:burpeebata/services/timer_service.dart';
 import 'package:burpeebata/services/audio_service.dart';
 import 'package:burpeebata/models/workout_config.dart';
-import 'package:burpeebata/models/burpee_type.dart';
 
 import 'timer_service_test.mocks.dart';
 
@@ -218,194 +218,230 @@ void main() {
     });
 
     group('timer tick simulation', () {
-      test('countdown decrements and plays beep each second', () async {
-        const config = WorkoutConfig();
-        await timerService.startWorkout(config);
+      test('countdown decrements and plays beep each second', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig();
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Fast-forward time to simulate tick
-        await Future.delayed(const Duration(milliseconds: 1100));
+          // Fast-forward time to simulate tick
+          async.elapse(const Duration(seconds: 1));
 
-        // Should have played additional beep
-        verify(mockAudioService.playCountdownBeep()).called(greaterThan(1));
+          // Should have played additional beep
+          verify(mockAudioService.playCountdownBeep()).called(greaterThan(1));
+        });
       });
     });
 
     group('currentRep calculation', () {
-      test('returns 0 when not in work state', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-        );
-        await timerService.startWorkout(config);
+      test('returns 0 when not in work state', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // In countdown state
-        expect(timerService.state, equals(TimerState.countdown));
-        expect(timerService.currentRep, equals(0));
+          // In countdown state
+          expect(timerService.state, equals(TimerState.countdown));
+          expect(timerService.currentRep, equals(0));
+        });
       });
 
-      test('returns 0 when repsPerSet is 0', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 0,
-          secondsPerSet: 20,
-        );
-        await timerService.startWorkout(config);
+      test('returns 0 when repsPerSet is 0', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 0,
+            secondsPerSet: 20,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Even if we could get to work state, should return 0
-        expect(timerService.currentRep, equals(0));
+          // Even if we could get to work state, should return 0
+          expect(timerService.currentRep, equals(0));
+        });
       });
 
-      test('calculates rep 1 at start of work period', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('calculates rep 1 at start of work period', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown to finish and work to start
-        await Future.delayed(const Duration(milliseconds: 3200));
+          // Elapse countdown (3s) to start work
+          async.elapse(const Duration(seconds: 3));
 
-        expect(timerService.state, equals(TimerState.work));
-        // At start of 20 seconds, elapsed = 0, rep should be 1
-        expect(timerService.currentRep, equals(1));
+          expect(timerService.state, equals(TimerState.work));
+          // At start of 20 seconds, elapsed = 0, rep should be 1
+          expect(timerService.currentRep, equals(1));
+        });
       });
 
-      test('calculates correct rep with even division', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('calculates correct rep with even division', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown (3s) + 4 seconds of work
-        // 20s / 5 reps = 4s per rep
-        // At 4s elapsed, should be on rep 2
-        await Future.delayed(const Duration(milliseconds: 7200));
+          // Elapse countdown (3s) + 4 seconds of work
+          // 20s / 5 reps = 4s per rep
+          // At 4s elapsed, should be on rep 2
+          async.elapse(const Duration(seconds: 7));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(2));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(2));
+        });
       });
 
-      test('clamps to max reps at end of work period', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('clamps to max reps at end of work period', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown (3s) + 19 seconds of work (near end)
-        await Future.delayed(const Duration(milliseconds: 22200));
+          // Elapse countdown (3s) + 19 seconds of work (near end)
+          async.elapse(const Duration(seconds: 22));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(5));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(5));
+        });
       });
 
-      test('handles repsPerSet of 1', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 1,
-          secondsPerSet: 10,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('handles repsPerSet of 1', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 1,
+            secondsPerSet: 10,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown to finish
-        await Future.delayed(const Duration(milliseconds: 3200));
+          // Elapse countdown to start work
+          async.elapse(const Duration(seconds: 3));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(1));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(1));
+        });
       });
 
-      test('handles uneven division', () async {
-        // 20s / 3 reps = 6.67s per rep
-        const config = WorkoutConfig(
-          repsPerSet: 3,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('handles uneven division', () {
+        fakeAsync((async) {
+          // 20s / 3 reps = 6.67s per rep
+          const config = WorkoutConfig(
+            repsPerSet: 3,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown (3s) + 7 seconds of work
-        // 7 / 6.67 = 1.05, floor + 1 = 2
-        await Future.delayed(const Duration(milliseconds: 10200));
+          // Elapse countdown (3s) + 7 seconds of work
+          // 7 / 6.67 = 1.05, floor + 1 = 2
+          async.elapse(const Duration(seconds: 10));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(2));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(2));
+        });
       });
     });
 
     group('ping sound on rep change', () {
-      test('does not play ping at start of work (rep 1)', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('does not play ping at start of work (rep 1)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown to finish
-        await Future.delayed(const Duration(milliseconds: 3200));
+          // Elapse countdown to start work
+          async.elapse(const Duration(seconds: 3));
 
-        // Should be in work state at rep 1
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(1));
+          // Should be in work state at rep 1
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(1));
 
-        // Ping should not have been called yet
-        verifyNever(mockAudioService.playPing());
+          // Ping should not have been called yet
+          verifyNever(mockAudioService.playPing());
+        });
       });
 
-      test('plays ping when rep changes from 1 to 2', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('plays ping when rep changes from 1 to 2', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown (3s) + 4s work (first rep change at 4s)
-        await Future.delayed(const Duration(milliseconds: 7200));
+          // Elapse countdown (3s) + 4s work (first rep change at 4s)
+          async.elapse(const Duration(seconds: 7));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(2));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(2));
 
-        // Ping should have been called once
-        verify(mockAudioService.playPing()).called(1);
+          // Ping should have been called once
+          verify(mockAudioService.playPing()).called(1);
+        });
       });
 
-      test('plays ping on each rep change', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 5,
-          secondsPerSet: 20,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('plays ping on each rep change', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 5,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown (3s) + 12s work (3 rep changes at 4s, 8s, 12s)
-        await Future.delayed(const Duration(milliseconds: 15200));
+          // Elapse countdown (3s) + 12s work (3 rep changes at 4s, 8s, 12s)
+          async.elapse(const Duration(seconds: 15));
 
-        expect(timerService.state, equals(TimerState.work));
-        expect(timerService.currentRep, equals(4));
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentRep, equals(4));
 
-        // Ping should have been called 3 times (rep 2, 3, 4)
-        verify(mockAudioService.playPing()).called(3);
+          // Ping should have been called 3 times (rep 2, 3, 4)
+          verify(mockAudioService.playPing()).called(3);
+        });
       });
 
-      test('does not play ping when repsPerSet is 1', () async {
-        const config = WorkoutConfig(
-          repsPerSet: 1,
-          secondsPerSet: 10,
-          numberOfSets: 1,
-        );
-        await timerService.startWorkout(config);
+      test('does not play ping when repsPerSet is 1', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            repsPerSet: 1,
+            secondsPerSet: 10,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
 
-        // Wait for countdown + some work time
-        await Future.delayed(const Duration(milliseconds: 8200));
+          // Elapse countdown + some work time
+          async.elapse(const Duration(seconds: 8));
 
-        expect(timerService.state, equals(TimerState.work));
+          expect(timerService.state, equals(TimerState.work));
 
-        // Ping should never be called when there's only 1 rep
-        verifyNever(mockAudioService.playPing());
+          // Ping should never be called when there's only 1 rep
+          verifyNever(mockAudioService.playPing());
+        });
       });
     });
 
