@@ -19,24 +19,25 @@ void main() {
         expect(find.text('Seconds per Set'), findsOneWidget);
         expect(find.text('Number of Sets'), findsOneWidget);
         expect(find.text('Rest Between Sets (sec)'), findsOneWidget);
+        expect(find.text('Initial Countdown (sec)'), findsOneWidget);
 
         // Verify default values are displayed in text fields
         final textFields = find.byType(TextFormField);
-        expect(textFields, findsNWidgets(4));
+        expect(textFields, findsNWidgets(5));
 
-        // Check default values (5, 20, 10, 4)
+        // Check default values (5, 20, 10, 4, 10)
         expect(find.text('5'), findsOneWidget); // Reps
         expect(find.text('20'), findsOneWidget); // Seconds
-        expect(find.text('10'), findsOneWidget); // Sets
+        expect(find.text('10'), findsNWidgets(2)); // Sets and Initial Countdown both default to 10
         expect(find.text('4'), findsOneWidget); // Rest
       });
 
       testWidgets('displays plus and minus buttons for each input', (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        // 4 inputs * 2 buttons each = 8 icon buttons
-        expect(find.byIcon(Icons.add), findsNWidgets(4));
-        expect(find.byIcon(Icons.remove), findsNWidgets(4));
+        // 5 inputs * 2 buttons each = 10 icon buttons
+        expect(find.byIcon(Icons.add), findsNWidgets(5));
+        expect(find.byIcon(Icons.remove), findsNWidgets(5));
       });
     });
 

@@ -13,6 +13,7 @@ void main() {
         expect(config.secondsPerSet, equals(20));
         expect(config.numberOfSets, equals(10));
         expect(config.restBetweenSets, equals(4));
+        expect(config.initialCountdown, equals(10));
       });
     });
 
@@ -29,6 +30,7 @@ void main() {
         expect(copy.secondsPerSet, equals(config.secondsPerSet));
         expect(copy.numberOfSets, equals(config.numberOfSets));
         expect(copy.restBetweenSets, equals(config.restBetweenSets));
+        expect(copy.initialCountdown, equals(config.initialCountdown));
       });
 
       test('creates exact copy when no parameters provided', () {
@@ -38,6 +40,7 @@ void main() {
           secondsPerSet: 30,
           numberOfSets: 5,
           restBetweenSets: 15,
+          initialCountdown: 15,
         );
         final copy = config.copyWith();
 
@@ -46,6 +49,15 @@ void main() {
         expect(copy.secondsPerSet, equals(config.secondsPerSet));
         expect(copy.numberOfSets, equals(config.numberOfSets));
         expect(copy.restBetweenSets, equals(config.restBetweenSets));
+        expect(copy.initialCountdown, equals(config.initialCountdown));
+      });
+
+      test('copies initialCountdown correctly', () {
+        const config = WorkoutConfig();
+        final copy = config.copyWith(initialCountdown: 20);
+
+        expect(copy.initialCountdown, equals(20));
+        expect(copy.repsPerSet, equals(config.repsPerSet));
       });
     });
 

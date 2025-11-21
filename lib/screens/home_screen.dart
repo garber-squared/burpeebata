@@ -150,6 +150,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 _updateConfig(_config.copyWith(restBetweenSets: value));
               },
             ),
+            _buildNumberInput(
+              label: 'Initial Countdown (sec)',
+              value: _config.initialCountdown,
+              min: 3,
+              max: 30,
+              onChanged: (value) {
+                _updateConfig(_config.copyWith(initialCountdown: value));
+              },
+            ),
           ],
         ),
       ),

@@ -21,9 +21,8 @@ class TimerService extends ChangeNotifier {
   int _restSeconds = 0;
   int _repsPerSet = 0;
   int _lastRep = 0;
+  int _initialCountdownSeconds = 10;
   final AudioService _audioService;
-
-  static const int _countdownSeconds = 3;
 
   TimerService({AudioService? audioService})
       : _audioService = audioService ?? AudioService();
@@ -57,7 +56,7 @@ class TimerService extends ChangeNotifier {
   double get progress {
     if (_state == TimerState.idle || _state == TimerState.finished) return 0;
     if (_state == TimerState.countdown) {
-      return 1 - (_currentSeconds / _countdownSeconds);
+      return 1 - (_currentSeconds / _initialCountdownSeconds);
     }
     if (_state == TimerState.work) {
       return 1 - (_currentSeconds / _workSeconds);
@@ -75,6 +74,7 @@ class TimerService extends ChangeNotifier {
     _workSeconds = config.secondsPerSet;
     _restSeconds = config.restBetweenSets;
     _repsPerSet = config.repsPerSet;
+    _initialCountdownSeconds = config.initialCountdown;
     _currentSet = 1;
 
     _startCountdown();
@@ -82,9 +82,7 @@ class TimerService extends ChangeNotifier {
 
   void _startCountdown() {
     _state = TimerState.countdown;
-    _currentSeconds = _countdownSeconds;
-    // Play first countdown beep immediately
-    _audioService.playCountdownBeep();
+    _currentSeconds = _initialCountdownSeconds;
     notifyListeners();
     _startTimer();
   }
@@ -116,8 +114,8 @@ class TimerService extends ChangeNotifier {
   void _tick() {
     if (_currentSeconds > 1) {
       _currentSeconds--;
-      // Play countdown beep for each second during countdown
-      if (_state == TimerState.countdown) {
+      // Play countdown beep in last 3 seconds of initial countdown
+      if (_state == TimerState.countdown && _currentSeconds <= 3) {
         _audioService.playCountdownBeep();
       }
       // Play countdown beep in last 3 seconds of work period

@@ -6,6 +6,7 @@ class WorkoutConfig {
   final int secondsPerSet;
   final int numberOfSets;
   final int restBetweenSets;
+  final int initialCountdown;
 
   const WorkoutConfig({
     this.burpeeType = BurpeeType.militarySixCount,
@@ -13,6 +14,7 @@ class WorkoutConfig {
     this.secondsPerSet = 20,
     this.numberOfSets = 10,
     this.restBetweenSets = 4,
+    this.initialCountdown = 10,
   });
 
   factory WorkoutConfig.forBurpeeType(BurpeeType type) {
@@ -24,6 +26,7 @@ class WorkoutConfig {
           secondsPerSet: 20,
           numberOfSets: 10,
           restBetweenSets: 4,
+          initialCountdown: 10,
         );
       case BurpeeType.navySeal:
         return const WorkoutConfig(
@@ -32,6 +35,7 @@ class WorkoutConfig {
           secondsPerSet: 15,
           numberOfSets: 10,
           restBetweenSets: 13,
+          initialCountdown: 10,
         );
     }
   }
@@ -42,6 +46,7 @@ class WorkoutConfig {
     int? secondsPerSet,
     int? numberOfSets,
     int? restBetweenSets,
+    int? initialCountdown,
   }) {
     return WorkoutConfig(
       burpeeType: burpeeType ?? this.burpeeType,
@@ -49,6 +54,7 @@ class WorkoutConfig {
       secondsPerSet: secondsPerSet ?? this.secondsPerSet,
       numberOfSets: numberOfSets ?? this.numberOfSets,
       restBetweenSets: restBetweenSets ?? this.restBetweenSets,
+      initialCountdown: initialCountdown ?? this.initialCountdown,
     );
   }
 

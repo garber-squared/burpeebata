@@ -98,20 +98,20 @@ void main() {
         expect(timerService.state, equals(TimerState.countdown));
       });
 
-      test('sets countdown seconds to 3', () async {
+      test('sets countdown seconds to configured initialCountdown', () async {
         const config = WorkoutConfig();
 
         await timerService.startWorkout(config);
 
-        expect(timerService.currentSeconds, equals(3));
+        expect(timerService.currentSeconds, equals(10));
       });
 
-      test('plays countdown beep on start', () async {
-        const config = WorkoutConfig();
+      test('sets countdown seconds to custom initialCountdown', () async {
+        const config = WorkoutConfig(initialCountdown: 5);
 
         await timerService.startWorkout(config);
 
-        verify(mockAudioService.playCountdownBeep()).called(1);
+        expect(timerService.currentSeconds, equals(5));
       });
     });
 
@@ -137,8 +137,8 @@ void main() {
         const config = WorkoutConfig();
         await timerService.startWorkout(config);
 
-        // At start of countdown (3 seconds remaining out of 3)
-        // progress = 1 - (3/3) = 0
+        // At start of countdown (10 seconds remaining out of 10)
+        // progress = 1 - (10/10) = 0
         expect(timerService.progress, equals(0));
       });
     });
@@ -218,17 +218,47 @@ void main() {
     });
 
     group('timer tick simulation', () {
-      test('countdown decrements and plays beep each second', () {
+      test('countdown plays beep only in last 3 seconds', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(initialCountdown: 5);
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Fast-forward 1 second (5 -> 4, no beep yet)
+          async.elapse(const Duration(seconds: 1));
+          verifyNever(mockAudioService.playCountdownBeep());
+
+          // At 2 seconds elapsed (5 -> 4 -> 3), beep should play
+          async.elapse(const Duration(seconds: 1));
+          verify(mockAudioService.playCountdownBeep()).called(1);
+
+          // At 3 seconds elapsed (3 -> 2), another beep
+          async.elapse(const Duration(seconds: 1));
+          verify(mockAudioService.playCountdownBeep()).called(2);
+        });
+      });
+
+      test('initial countdown with default 10 seconds plays beep in last 3', () {
         fakeAsync((async) {
           const config = WorkoutConfig();
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Fast-forward time to simulate tick
-          async.elapse(const Duration(seconds: 1));
+          // Fast-forward past first 6 seconds (no beeps yet, at 4 seconds remaining)
+          async.elapse(const Duration(seconds: 6));
+          verifyNever(mockAudioService.playCountdownBeep());
 
-          // Should have played additional beep
-          verify(mockAudioService.playCountdownBeep()).called(greaterThan(1));
+          // At 7 seconds elapsed (10 -> ... -> 3), beep should play
+          async.elapse(const Duration(seconds: 1));
+          verify(mockAudioService.playCountdownBeep()).called(1);
+
+          // Continue to 2 seconds remaining
+          async.elapse(const Duration(seconds: 1));
+          verify(mockAudioService.playCountdownBeep()).called(2);
+
+          // Continue to 1 second remaining
+          async.elapse(const Duration(seconds: 1));
+          verify(mockAudioService.playCountdownBeep()).called(3);
         });
       });
     });
@@ -239,6 +269,7 @@ void main() {
           const config = WorkoutConfig(
             repsPerSet: 5,
             secondsPerSet: 20,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -254,6 +285,7 @@ void main() {
           const config = WorkoutConfig(
             repsPerSet: 0,
             secondsPerSet: 20,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -269,6 +301,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -288,6 +321,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -308,6 +342,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -326,6 +361,7 @@ void main() {
             repsPerSet: 1,
             secondsPerSet: 10,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -345,6 +381,7 @@ void main() {
             repsPerSet: 3,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -366,6 +403,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -388,6 +426,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -409,6 +448,7 @@ void main() {
             repsPerSet: 5,
             secondsPerSet: 20,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
@@ -430,6 +470,7 @@ void main() {
             repsPerSet: 1,
             secondsPerSet: 10,
             numberOfSets: 1,
+            initialCountdown: 3,
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
