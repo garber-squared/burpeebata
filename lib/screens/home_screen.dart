@@ -14,9 +14,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final Map<BurpeeType, WorkoutConfig> _configs = {
-    BurpeeType.militarySixCount: WorkoutConfig.forBurpeeType(BurpeeType.militarySixCount),
-    BurpeeType.navySeal: WorkoutConfig.forBurpeeType(BurpeeType.navySeal),
-  };
+  BurpeeType.militarySixCount: WorkoutConfig.forBurpeeType(BurpeeType.militarySixCount),
+  BurpeeType.navySeal: WorkoutConfig.forBurpeeType(BurpeeType.navySeal),
+};
   BurpeeType _selectedType = BurpeeType.militarySixCount;
 
   WorkoutConfig get _config => _configs[_selectedType]!;
@@ -76,21 +76,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             SegmentedButton<BurpeeType>(
-              segments: BurpeeType.values.map((type) {
-                return ButtonSegment<BurpeeType>(
-                  value: type,
-                  label: Text(
-                    type == BurpeeType.militarySixCount ? '6-Count' : 'Navy Seal',
-                  ),
-                );
-              }).toList(),
-              selected: {_selectedType},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _selectedType = selection.first;
-                });
-              },
-            ),
+            segments: BurpeeType.values.map((type) {
+              return ButtonSegment<BurpeeType>(
+                value: type,
+                label: Text(
+                  type == BurpeeType.militarySixCount ? '6-Count' : 'Navy Seal',
+                ),
+              );
+            }).toList(),
+            selected: {_selectedType},
+            onSelectionChanged: (selection) {
+              setState(() {
+                _selectedType = selection.first;
+              });
+            },
+          ),
             const SizedBox(height: 8),
             Text(
               _config.burpeeType.description,
@@ -115,21 +115,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 16),
             _buildNumberInput(
-              label: 'Reps per Set',
-              value: _config.repsPerSet,
-              min: 1,
+              label: 'Initial Countdown (sec)',
+              value: _config.initialCountdown,
+              min: 3,
               max: 30,
               onChanged: (value) {
-                _updateConfig(_config.copyWith(repsPerSet: value));
-              },
-            ),
-            _buildNumberInput(
-              label: 'Seconds per Set',
-              value: _config.secondsPerSet,
-              min: 1,
-              max: 60,
-              onChanged: (value) {
-                _updateConfig(_config.copyWith(secondsPerSet: value));
+                _updateConfig(_config.copyWith(initialCountdown: value));
               },
             ),
             _buildNumberInput(
@@ -142,21 +133,30 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             _buildNumberInput(
+              label: 'Seconds per Set',
+              value: _config.secondsPerSet,
+              min: 1,
+              max: 60,
+              onChanged: (value) {
+                _updateConfig(_config.copyWith(secondsPerSet: value));
+              },
+            ),
+            _buildNumberInput(
+              label: 'Reps per Set',
+              value: _config.repsPerSet,
+              min: 1,
+              max: 30,
+              onChanged: (value) {
+                _updateConfig(_config.copyWith(repsPerSet: value));
+              },
+            ),
+            _buildNumberInput(
               label: 'Rest Between Sets (sec)',
               value: _config.restBetweenSets,
               min: 0,
               max: 60,
               onChanged: (value) {
                 _updateConfig(_config.copyWith(restBetweenSets: value));
-              },
-            ),
-            _buildNumberInput(
-              label: 'Initial Countdown (sec)',
-              value: _config.initialCountdown,
-              min: 3,
-              max: 30,
-              onChanged: (value) {
-                _updateConfig(_config.copyWith(initialCountdown: value));
               },
             ),
           ],
@@ -183,12 +183,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.remove),
             onPressed: value > min
-                ? () => onChanged(value - 1)
-                : null,
+            ? () => onChanged(value - 1)
+            : null,
             style: IconButton.styleFrom(
               backgroundColor: value > min
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceVariant,
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceVariant,
             ),
           ),
           const SizedBox(width: 8),
@@ -226,12 +226,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: value < max
-                ? () => onChanged(value + 1)
-                : null,
+            ? () => onChanged(value + 1)
+            : null,
             style: IconButton.styleFrom(
               backgroundColor: value < max
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceVariant,
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceVariant,
             ),
           ),
         ],
@@ -254,8 +254,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               _config.formattedDuration,
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
