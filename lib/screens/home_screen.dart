@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/burpee_type.dart';
 import '../models/workout_config.dart';
 import 'timer_screen.dart';
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
-            _buildSlider(
+            _buildNumberInput(
               label: 'Reps per Set',
               value: _config.repsPerSet,
               min: 1,
@@ -112,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
-            _buildSlider(
+            _buildNumberInput(
               label: 'Seconds per Set',
               value: _config.secondsPerSet,
               min: 1,
@@ -123,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
-            _buildSlider(
+            _buildNumberInput(
               label: 'Number of Sets',
               value: _config.numberOfSets,
               min: 1,
@@ -134,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
-            _buildSlider(
+            _buildNumberInput(
               label: 'Rest Between Sets (sec)',
               value: _config.restBetweenSets,
               min: 0,
@@ -151,34 +152,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSlider({
+  Widget _buildNumberInput({
     required String label,
     required int value,
     required int min,
     required int max,
     required ValueChanged<int> onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label),
-            Text(
-              '$value',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(label),
+          ),
+          IconButton(
+            icon: const Icon(Icons.remove),
+            onPressed: value > min
+                ? () => onChanged(value - 1)
+                : null,
+            style: IconButton.styleFrom(
+              backgroundColor: value > min
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceVariant,
             ),
-          ],
-        ),
-        Slider(
-          value: value.toDouble(),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          divisions: max - min,
-          onChanged: (v) => onChanged(v.round()),
-        ),
-      ],
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 60,
+            child: TextFormField(
+              key: ValueKey('$label-$value'),
+              initialValue: '$value',
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (text) {
+                final parsed = int.tryParse(text);
+                if (parsed != null) {
+                  final clamped = parsed.clamp(min, max);
+                  onChanged(clamped);
+                }
+              },
+              onFieldSubmitted: (text) {
+                final parsed = int.tryParse(text);
+                if (parsed == null || text.isEmpty) {
+                  onChanged(value);
+                } else {
+                  onChanged(parsed.clamp(min, max));
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: value < max
+                ? () => onChanged(value + 1)
+                : null,
+            style: IconButton.styleFrom(
+              backgroundColor: value < max
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
