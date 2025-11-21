@@ -188,16 +188,24 @@ class _TimerScreenState extends State<TimerScreen> {
                   Text(
                     'Rep ${_timerService.currentRep}/${_timerService.repsPerSet}',
                     style: const TextStyle(
-                      fontSize: 32,
+                      fontSize: 40,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                    ),
+                  )
+                else if (_timerService.state == TimerState.rest)
+                  Text(
+                    '${_calculateCompletedPercentage()}% done',
+                    style: const TextStyle(
+                      fontSize: 40,
+                      color: Colors.white70,
                     ),
                   )
                 else
                   Text(
                     '${widget.config.repsPerSet} reps',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 40,
                       color: Colors.white70,
                     ),
                   ),
@@ -205,7 +213,7 @@ class _TimerScreenState extends State<TimerScreen> {
                 Text(
                   'Set ${_timerService.currentSet} of ${_timerService.totalSets}',
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 40,
                     color: Colors.white,
                   ),
                 ),
@@ -260,6 +268,14 @@ class _TimerScreenState extends State<TimerScreen> {
       default:
         return '';
     }
+  }
+
+  int _calculateCompletedPercentage() {
+    final totalReps = widget.config.repsPerSet * widget.config.numberOfSets;
+    // During rest, currentSet shows the upcoming set, so completed sets = currentSet - 1
+    final completedSets = _timerService.currentSet - 1;
+    final completedReps = completedSets * widget.config.repsPerSet;
+    return ((completedReps / totalReps) * 100).round();
   }
 
   Widget _buildFinishedView() {
