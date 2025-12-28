@@ -11,6 +11,9 @@ class Workout {
   final int restBetweenSets;
   final bool completed;
   final int completedSets;
+  final bool isCompleted;
+  final bool isCompletedInTime;
+  final int elapsedSeconds;
 
   Workout({
     required this.id,
@@ -22,6 +25,9 @@ class Workout {
     required this.restBetweenSets,
     this.completed = false,
     this.completedSets = 0,
+    this.isCompleted = false,
+    this.isCompletedInTime = false,
+    this.elapsedSeconds = 0,
   });
 
   int get totalReps => repsPerSet * completedSets;
@@ -40,6 +46,9 @@ class Workout {
     int? restBetweenSets,
     bool? completed,
     int? completedSets,
+    bool? isCompleted,
+    bool? isCompletedInTime,
+    int? elapsedSeconds,
   }) {
     return Workout(
       id: id ?? this.id,
@@ -51,6 +60,9 @@ class Workout {
       restBetweenSets: restBetweenSets ?? this.restBetweenSets,
       completed: completed ?? this.completed,
       completedSets: completedSets ?? this.completedSets,
+      isCompleted: isCompleted ?? this.isCompleted,
+      isCompletedInTime: isCompletedInTime ?? this.isCompletedInTime,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
     );
   }
 
@@ -65,6 +77,9 @@ class Workout {
       'restBetweenSets': restBetweenSets,
       'completed': completed,
       'completedSets': completedSets,
+      'isCompleted': isCompleted,
+      'isCompletedInTime': isCompletedInTime,
+      'elapsedSeconds': elapsedSeconds,
     };
   }
 
@@ -79,6 +94,9 @@ class Workout {
       restBetweenSets: json['restBetweenSets'] as int,
       completed: json['completed'] as bool,
       completedSets: json['completedSets'] as int,
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      isCompletedInTime: json['isCompletedInTime'] as bool? ?? false,
+      elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
     );
   }
 

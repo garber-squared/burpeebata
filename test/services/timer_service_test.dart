@@ -513,6 +513,168 @@ void main() {
         expect(notificationCount, equals(1));
       });
     });
+
+    group('elapsed time tracking', () {
+      test('starts at 0', () {
+        expect(timerService.elapsedWorkoutSeconds, equals(0));
+      });
+
+      test('remains 0 during countdown', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(initialCountdown: 5);
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse 4 seconds of countdown
+          async.elapse(const Duration(seconds: 4));
+
+          // Still in countdown state
+          expect(timerService.state, equals(TimerState.countdown));
+          // Elapsed time should still be 0 (countdown excluded)
+          expect(timerService.elapsedWorkoutSeconds, equals(0));
+        });
+      });
+
+      test('starts counting after countdown completes', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3));
+
+          // Now in work state
+          expect(timerService.state, equals(TimerState.work));
+          // Elapsed should still be 0 at exact transition
+          expect(timerService.elapsedWorkoutSeconds, equals(0));
+
+          // Elapse 1 more second of work
+          async.elapse(const Duration(seconds: 1));
+
+          // Now elapsed should be 1
+          expect(timerService.elapsedWorkoutSeconds, equals(1));
+        });
+      });
+
+      test('continues counting through work periods', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 1,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown + 5 seconds of work
+          async.elapse(const Duration(seconds: 8));
+
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.elapsedWorkoutSeconds, equals(5));
+        });
+      });
+
+      test('continues counting through rest periods', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 5,
+            numberOfSets: 2,
+            restBetweenSets: 4,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (5s) + 2 seconds of rest
+          async.elapse(const Duration(seconds: 10));
+
+          expect(timerService.state, equals(TimerState.rest));
+          // Should have counted: 5s work + 2s rest = 7s total
+          expect(timerService.elapsedWorkoutSeconds, equals(7));
+        });
+      });
+
+      test('tracks complete workout with multiple sets', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 3,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Total workout time (excluding countdown):
+          // 3 work periods * 10s = 30s
+          // 2 rest periods * 5s = 10s
+          // Total = 40s
+
+          // Elapse countdown (3s) + full workout (40s)
+          async.elapse(const Duration(seconds: 43));
+
+          expect(timerService.state, equals(TimerState.finished));
+          expect(timerService.elapsedWorkoutSeconds, equals(40));
+        });
+      });
+
+      test('resets to 0 on stop', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse some time
+          async.elapse(const Duration(seconds: 10));
+
+          // Should have some elapsed time
+          expect(timerService.elapsedWorkoutSeconds, greaterThan(0));
+
+          // Stop the workout
+          timerService.stop();
+
+          // Elapsed time should reset
+          expect(timerService.elapsedWorkoutSeconds, equals(0));
+        });
+      });
+
+      test('does not count time during pause', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 20,
+            numberOfSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown + 5 seconds of work
+          async.elapse(const Duration(seconds: 8));
+
+          final elapsedBeforePause = timerService.elapsedWorkoutSeconds;
+          expect(elapsedBeforePause, equals(5));
+
+          // Pause the timer
+          timerService.pause();
+
+          // Elapse more time while paused
+          async.elapse(const Duration(seconds: 10));
+
+          // Elapsed time should not change during pause
+          expect(timerService.elapsedWorkoutSeconds, equals(elapsedBeforePause));
+        });
+      });
+    });
   });
 
   group('TimerState enum', () {

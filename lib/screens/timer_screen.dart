@@ -9,6 +9,7 @@ import '../services/storage_service.dart';
 import '../services/workout_service.dart';
 import '../providers/auth_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'post_workout_questionnaire_screen.dart';
 
 class TimerScreen extends StatefulWidget {
   final WorkoutConfig config;
@@ -47,11 +48,40 @@ class _TimerScreenState extends State<TimerScreen> {
   void _onTimerUpdate() {
     setState(() {});
     if (_timerService.state == TimerState.finished) {
-      _saveWorkout(completed: true);
+      _showPostWorkoutQuestionnaire();
     }
   }
 
-  Future<void> _saveWorkout({required bool completed}) async {
+  Future<void> _showPostWorkoutQuestionnaire() async {
+    if (!mounted) return;
+
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PostWorkoutQuestionnaireScreen(
+          config: widget.config,
+          elapsedSeconds: _timerService.elapsedWorkoutSeconds,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (!mounted) return;
+
+    await _saveWorkout(
+      completed: true,
+      isCompleted: result?['isCompleted'] ?? false,
+      isCompletedInTime: result?['isCompletedInTime'] ?? false,
+      elapsedSeconds: _timerService.elapsedWorkoutSeconds,
+    );
+  }
+
+  Future<void> _saveWorkout({
+    required bool completed,
+    bool isCompleted = false,
+    bool isCompletedInTime = false,
+    int elapsedSeconds = 0,
+  }) async {
     final workout = Workout(
       id: const Uuid().v4(),
       date: DateTime.now(),
@@ -62,6 +92,9 @@ class _TimerScreenState extends State<TimerScreen> {
       restBetweenSets: widget.config.restBetweenSets,
       completed: completed,
       completedSets: completed ? widget.config.numberOfSets : _timerService.completedSets,
+      isCompleted: isCompleted,
+      isCompletedInTime: isCompletedInTime,
+      elapsedSeconds: elapsedSeconds,
     );
 
     // Save to local storage
