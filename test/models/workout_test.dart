@@ -176,6 +176,158 @@ void main() {
         expect(defaultWorkout.completed, equals(false));
         expect(defaultWorkout.completedSets, equals(0));
       });
+
+      test('new questionnaire fields default to false and 0', () {
+        final defaultWorkout = Workout(
+          id: 'id',
+          date: DateTime.now(),
+          burpeeType: BurpeeType.militarySixCount,
+          repsPerSet: 10,
+          secondsPerSet: 20,
+          numberOfSets: 8,
+          restBetweenSets: 10,
+        );
+
+        expect(defaultWorkout.isCompleted, equals(false));
+        expect(defaultWorkout.isCompletedInTime, equals(false));
+        expect(defaultWorkout.elapsedSeconds, equals(0));
+      });
+    });
+
+    group('new questionnaire fields', () {
+      test('can create workout with questionnaire fields', () {
+        final workoutWithQuestionnaire = Workout(
+          id: 'test-id',
+          date: DateTime.now(),
+          burpeeType: BurpeeType.militarySixCount,
+          repsPerSet: 10,
+          secondsPerSet: 20,
+          numberOfSets: 8,
+          restBetweenSets: 10,
+          completed: true,
+          completedSets: 8,
+          isCompleted: true,
+          isCompletedInTime: true,
+          elapsedSeconds: 245,
+        );
+
+        expect(workoutWithQuestionnaire.isCompleted, equals(true));
+        expect(workoutWithQuestionnaire.isCompletedInTime, equals(true));
+        expect(workoutWithQuestionnaire.elapsedSeconds, equals(245));
+      });
+
+      test('copyWith updates questionnaire fields', () {
+        final copy = workout.copyWith(
+          isCompleted: true,
+          isCompletedInTime: false,
+          elapsedSeconds: 300,
+        );
+
+        expect(copy.isCompleted, equals(true));
+        expect(copy.isCompletedInTime, equals(false));
+        expect(copy.elapsedSeconds, equals(300));
+        expect(copy.id, equals(workout.id)); // Other fields unchanged
+      });
+
+      test('toJson includes questionnaire fields', () {
+        final workoutWithQuestionnaire = workout.copyWith(
+          isCompleted: true,
+          isCompletedInTime: true,
+          elapsedSeconds: 245,
+        );
+        final json = workoutWithQuestionnaire.toJson();
+
+        expect(json['isCompleted'], equals(true));
+        expect(json['isCompletedInTime'], equals(true));
+        expect(json['elapsedSeconds'], equals(245));
+      });
+
+      test('fromJson deserializes questionnaire fields', () {
+        final json = {
+          'id': 'json-id',
+          'date': '2024-02-20T14:00:00.000',
+          'burpeeType': 1,
+          'repsPerSet': 15,
+          'secondsPerSet': 30,
+          'numberOfSets': 5,
+          'restBetweenSets': 15,
+          'completed': true,
+          'completedSets': 5,
+          'isCompleted': true,
+          'isCompletedInTime': false,
+          'elapsedSeconds': 320,
+        };
+
+        final fromJson = Workout.fromJson(json);
+
+        expect(fromJson.isCompleted, equals(true));
+        expect(fromJson.isCompletedInTime, equals(false));
+        expect(fromJson.elapsedSeconds, equals(320));
+      });
+
+      test('round-trip serialization preserves questionnaire fields', () {
+        final workoutWithQuestionnaire = workout.copyWith(
+          isCompleted: true,
+          isCompletedInTime: true,
+          elapsedSeconds: 245,
+        );
+        final json = workoutWithQuestionnaire.toJson();
+        final restored = Workout.fromJson(json);
+
+        expect(restored.isCompleted, equals(true));
+        expect(restored.isCompletedInTime, equals(true));
+        expect(restored.elapsedSeconds, equals(245));
+      });
+    });
+
+    group('backward compatibility', () {
+      test('fromJson handles missing questionnaire fields with defaults', () {
+        // Old JSON format without new fields
+        final oldJson = {
+          'id': 'old-workout',
+          'date': '2024-01-01T12:00:00.000',
+          'burpeeType': 0,
+          'repsPerSet': 10,
+          'secondsPerSet': 20,
+          'numberOfSets': 8,
+          'restBetweenSets': 10,
+          'completed': true,
+          'completedSets': 8,
+        };
+
+        final fromOldJson = Workout.fromJson(oldJson);
+
+        // Should use default values for new fields
+        expect(fromOldJson.isCompleted, equals(false));
+        expect(fromOldJson.isCompletedInTime, equals(false));
+        expect(fromOldJson.elapsedSeconds, equals(0));
+        // Other fields should still work
+        expect(fromOldJson.id, equals('old-workout'));
+        expect(fromOldJson.completed, equals(true));
+      });
+
+      test('fromJson handles null questionnaire fields with defaults', () {
+        final jsonWithNulls = {
+          'id': 'null-fields',
+          'date': '2024-01-01T12:00:00.000',
+          'burpeeType': 0,
+          'repsPerSet': 10,
+          'secondsPerSet': 20,
+          'numberOfSets': 8,
+          'restBetweenSets': 10,
+          'completed': true,
+          'completedSets': 8,
+          'isCompleted': null,
+          'isCompletedInTime': null,
+          'elapsedSeconds': null,
+        };
+
+        final fromJson = Workout.fromJson(jsonWithNulls);
+
+        expect(fromJson.isCompleted, equals(false));
+        expect(fromJson.isCompletedInTime, equals(false));
+        expect(fromJson.elapsedSeconds, equals(0));
+      });
     });
   });
 }

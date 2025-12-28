@@ -22,6 +22,8 @@ class TimerService extends ChangeNotifier {
   int _repsPerSet = 0;
   int _lastRep = 0;
   int _initialCountdownSeconds = 10;
+  int _elapsedWorkoutSeconds = 0;
+  bool _workoutStarted = false;
   final AudioService _audioService;
 
   TimerService({AudioService? audioService})
@@ -34,6 +36,7 @@ class TimerService extends ChangeNotifier {
   int get workSeconds => _workSeconds;
   int get restSeconds => _restSeconds;
   int get repsPerSet => _repsPerSet;
+  int get elapsedWorkoutSeconds => _elapsedWorkoutSeconds;
 
   int get currentRep {
     if (_state != TimerState.work || _repsPerSet <= 0) {
@@ -91,6 +94,10 @@ class TimerService extends ChangeNotifier {
     _state = TimerState.work;
     _currentSeconds = _workSeconds;
     _lastRep = 1; // Reset to first rep
+    // Mark workout as started on first work set (excludes countdown from elapsed time)
+    if (!_workoutStarted) {
+      _workoutStarted = true;
+    }
     // Play whistle to signal start of work
     _audioService.playWhistle();
     notifyListeners();
@@ -112,6 +119,11 @@ class TimerService extends ChangeNotifier {
   }
 
   void _tick() {
+    // Track elapsed time only after workout has started (excludes countdown)
+    if (_workoutStarted) {
+      _elapsedWorkoutSeconds++;
+    }
+
     if (_currentSeconds > 1) {
       _currentSeconds--;
       // Play countdown beep in last 3 seconds of initial countdown
@@ -186,6 +198,8 @@ class TimerService extends ChangeNotifier {
     _state = TimerState.idle;
     _currentSeconds = 0;
     _currentSet = 0;
+    _elapsedWorkoutSeconds = 0;
+    _workoutStarted = false;
     notifyListeners();
   }
 
