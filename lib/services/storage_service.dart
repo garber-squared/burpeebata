@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import '../models/workout_template.dart';
+import '../models/workout_config.dart';
 
 class StorageService {
   static const String _workoutsKey = 'workouts';
   static const String _templatesKey = 'workout_templates';
+  static const String _lastUsedConfigKey = 'last_used_config';
+  static const String _powerUserModeKey = 'power_user_mode';
 
   static Future<void> saveWorkout(Workout workout) async {
     final prefs = await SharedPreferences.getInstance();
@@ -94,5 +97,44 @@ class StorageService {
   static Future<void> clearAllTemplates() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_templatesKey);
+  }
+
+  // Last Used Configuration methods (Power User feature)
+  /// Save the last-used workout configuration for quick access
+  static Future<void> saveLastUsedConfig(WorkoutConfig config) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastUsedConfigKey, jsonEncode(config.toJson()));
+  }
+
+  /// Get the last-used workout configuration
+  /// Returns null if no configuration has been saved
+  static Future<WorkoutConfig?> getLastUsedConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_lastUsedConfigKey);
+
+    if (jsonString == null) {
+      return null;
+    }
+
+    try {
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      return WorkoutConfig.fromJson(json);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // User Preference methods
+  /// Enable/disable power user mode (compact layout, auto-load last config)
+  static Future<void> setPowerUserMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_powerUserModeKey, enabled);
+  }
+
+  /// Check if power user mode is enabled
+  /// Defaults to false for first-time users
+  static Future<bool> isPowerUserMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_powerUserModeKey) ?? false;
   }
 }

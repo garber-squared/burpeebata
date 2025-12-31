@@ -5,6 +5,7 @@ import '../models/burpee_type.dart';
 import '../models/workout_config.dart';
 import '../models/workout_template.dart';
 import '../providers/auth_provider.dart';
+import '../services/storage_service.dart';
 import 'timer_screen.dart';
 import 'history_screen.dart';
 import 'saved_workouts_screen.dart';
@@ -26,8 +27,60 @@ class _HomeScreenState extends State<HomeScreen> {
   };
   BurpeeType _selectedType = BurpeeType.militarySixCount;
   WorkoutTemplate? _loadedTemplate;
+  bool _powerUserMode = false;
+  bool _isLoading = true;
 
   WorkoutConfig get _config => _configs[_selectedType]!;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  /// Load user preferences and last-used configuration (Power User feature)
+  Future<void> _loadPreferences() async {
+    setState(() => _isLoading = true);
+
+    // Load power user mode preference
+    final powerUserMode = await StorageService.isPowerUserMode();
+
+    // Load last-used configuration
+    final lastConfig = await StorageService.getLastUsedConfig();
+
+    setState(() {
+      _powerUserMode = powerUserMode;
+      if (lastConfig != null) {
+        _selectedType = lastConfig.burpeeType;
+        _configs[lastConfig.burpeeType] = lastConfig;
+      }
+      _isLoading = false;
+    });
+  }
+
+  /// Save current configuration as last-used (Power User feature)
+  Future<void> _saveAsLastUsed() async {
+    await StorageService.saveLastUsedConfig(_config);
+  }
+
+  /// Toggle power user mode
+  Future<void> _togglePowerUserMode() async {
+    final newValue = !_powerUserMode;
+    await StorageService.setPowerUserMode(newValue);
+    setState(() => _powerUserMode = newValue);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          newValue
+              ? 'Power User Mode enabled - Last workout auto-loads'
+              : 'Power User Mode disabled',
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
 
   void _updateConfig(WorkoutConfig newConfig) {
     setState(() {
@@ -82,6 +135,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: Padding(
@@ -99,6 +158,15 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('BurpeeBata'),
         centerTitle: true,
         actions: [
+          // Power User Mode toggle
+          IconButton(
+            icon: Icon(
+              _powerUserMode ? Icons.flash_on : Icons.flash_off,
+              color: _powerUserMode ? Colors.amber : null,
+            ),
+            tooltip: _powerUserMode ? 'Power User Mode (ON)' : 'Power User Mode (OFF)',
+            onPressed: _togglePowerUserMode,
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
@@ -200,17 +268,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 return const SizedBox.shrink();
               },
             ),
-            _buildWorkoutTemplateSection(),
-            const SizedBox(height: 24),
+            // Hide templates section in power user mode (streamlined workflow)
+            if (!_powerUserMode) ...[
+              _buildWorkoutTemplateSection(),
+              const SizedBox(height: 24),
+            ],
             if (_loadedTemplate != null) _buildLoadedTemplateInfo(),
             if (_loadedTemplate != null) const SizedBox(height: 24),
             _buildBurpeeTypeSelector(),
             const SizedBox(height: 24),
-            _buildConfigCard(),
+            _buildStartButton(),
             const SizedBox(height: 24),
             _buildWorkoutSummary(),
-            const SizedBox(height: 32),
-            _buildStartButton(),
+            const SizedBox(height: 24),
+            _buildConfigCard(),
           ],
         ),
       ),
@@ -428,35 +499,49 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(
-            width: 60,
-            child: TextFormField(
-              key: ValueKey('$label-$value'),
-              initialValue: '$value',
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                border: OutlineInputBorder(),
+          // Value display with long-press for direct input (Power User feature)
+          GestureDetector(
+            onLongPress: () => _showNumericInputDialog(
+              context: context,
+              label: label,
+              value: value,
+              min: min,
+              max: max,
+              onChanged: onChanged,
+            ),
+            child: SizedBox(
+              width: 60,
+              child: TextFormField(
+                key: ValueKey('$label-$value'),
+                initialValue: '$value',
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: const TextStyle(
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (text) {
+                  final parsed = int.tryParse(text);
+                  if (parsed != null) {
+                    final clamped = parsed.clamp(min, max);
+                    onChanged(clamped);
+                  }
+                },
+                onFieldSubmitted: (text) {
+                  final parsed = int.tryParse(text);
+                  if (parsed == null || text.isEmpty) {
+                    onChanged(value);
+                  } else {
+                    onChanged(parsed.clamp(min, max));
+                  }
+                },
               ),
-              onChanged: (text) {
-                final parsed = int.tryParse(text);
-                if (parsed != null) {
-                  final clamped = parsed.clamp(min, max);
-                  onChanged(clamped);
-                }
-              },
-              onFieldSubmitted: (text) {
-                final parsed = int.tryParse(text);
-                if (parsed == null || text.isEmpty) {
-                  onChanged(value);
-                } else {
-                  onChanged(parsed.clamp(min, max));
-                }
-              },
             ),
           ),
           const SizedBox(width: 8),
@@ -473,6 +558,61 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  /// Show numeric input dialog (triggered by long-press - Power User feature)
+  Future<void> _showNumericInputDialog({
+    required BuildContext context,
+    required String label,
+    required int value,
+    required int min,
+    required int max,
+    required ValueChanged<int> onChanged,
+  }) async {
+    final controller = TextEditingController(text: '$value');
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(label),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autofocus: true,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+            decoration: InputDecoration(
+              hintText: '$min-$max',
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final parsed = int.tryParse(controller.text);
+                if (parsed != null) {
+                  Navigator.pop(context, parsed.clamp(min, max));
+                }
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null) {
+      onChanged(result);
+    }
   }
 
   Widget _buildWorkoutSummary() {
@@ -506,7 +646,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStartButton() {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
+        // Save current config as last-used (Power User feature)
+        await _saveAsLastUsed();
+
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(

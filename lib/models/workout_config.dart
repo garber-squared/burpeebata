@@ -69,4 +69,30 @@ class WorkoutConfig {
     final seconds = duration.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
+
+  // JSON serialization for saving/loading last used config
+  Map<String, dynamic> toJson() {
+    return {
+      'burpeeType': burpeeType.name,
+      'repsPerSet': repsPerSet,
+      'secondsPerSet': secondsPerSet,
+      'numberOfSets': numberOfSets,
+      'restBetweenSets': restBetweenSets,
+      'initialCountdown': initialCountdown,
+    };
+  }
+
+  factory WorkoutConfig.fromJson(Map<String, dynamic> json) {
+    return WorkoutConfig(
+      burpeeType: BurpeeType.values.firstWhere(
+        (e) => e.name == json['burpeeType'],
+        orElse: () => BurpeeType.militarySixCount,
+      ),
+      repsPerSet: json['repsPerSet'] as int? ?? 5,
+      secondsPerSet: json['secondsPerSet'] as int? ?? 20,
+      numberOfSets: json['numberOfSets'] as int? ?? 10,
+      restBetweenSets: json['restBetweenSets'] as int? ?? 4,
+      initialCountdown: json['initialCountdown'] as int? ?? 10,
+    );
+  }
 }
