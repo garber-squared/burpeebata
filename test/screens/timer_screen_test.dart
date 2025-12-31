@@ -1,16 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:burpeebata/screens/timer_screen.dart';
-import 'package:burpeebata/models/workout_config.dart';
-import '../helpers/firebase_test_helper.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     // Mock the WakelockPlus platform channel
-    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('wakelock_plus'),
       (MethodCall methodCall) async {
@@ -20,20 +16,12 @@ void main() {
   });
 
   tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('wakelock_plus'),
       null,
     );
   });
-
-  Widget createTestWidget(WorkoutConfig config) {
-    return wrapWithProviders(
-      MaterialApp(
-        home: TimerScreen(config: config),
-      ),
-    );
-  }
 
   group('TimerScreen', () {
     testWidgets('renders without error', (tester) async {

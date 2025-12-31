@@ -1,4 +1,7 @@
-.PHONY: up up-build build stop down clean restart logs ps doctor apk test
+.PHONY: up up-build build stop down clean restart logs ps doctor apk test start build-android adb-install
+
+start:
+	/bin/bash bin/startup.sh
 
 # Frontend targets
 up:
@@ -45,3 +48,9 @@ build-web:
 
 pub-get:
 	docker compose exec flutter flutter pub get
+
+build-android:
+	docker compose exec flutter flutter build apk --release --verbose
+
+adb-install:
+	adb install -r build/app/outputs/flutter-apk/app-release.apk

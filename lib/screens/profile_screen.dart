@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<Sex>(
-                  value: _selectedSex,
+                  initialValue: _selectedSex,
                   decoration: const InputDecoration(
                     labelText: 'Sex',
                     border: OutlineInputBorder(),

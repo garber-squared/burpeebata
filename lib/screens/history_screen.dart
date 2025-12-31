@@ -89,7 +89,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _shareWorkout(Workout workout) {
-    Share.share(workout.shareText);
+    SharePlus.instance.share(ShareParams(text: workout.shareText));
   }
 
   @override

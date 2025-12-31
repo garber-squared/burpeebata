@@ -151,7 +151,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                   decoration: BoxDecoration(
                     color: index <= _currentPage
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.surfaceVariant,
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -375,7 +375,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       child: Column(
         children: [
           Card(
-            color: buttonColor.withOpacity(0.15),
+            color: buttonColor.withValues(alpha: 0.15),
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
@@ -390,7 +390,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                   Text(
                     unit,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: buttonColor.withOpacity(0.8),
+                          color: buttonColor.withValues(alpha: 0.8),
                         ),
                   ),
                 ],
@@ -407,8 +407,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                 iconSize: 32,
                 style: IconButton.styleFrom(
                   backgroundColor: value > min
-                      ? buttonColor.withOpacity(0.2)
-                      : Theme.of(context).colorScheme.surfaceVariant,
+                      ? buttonColor.withValues(alpha: 0.2)
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   foregroundColor: value > min ? buttonColor : null,
                 ),
               ),
@@ -446,8 +446,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                 iconSize: 32,
                 style: IconButton.styleFrom(
                   backgroundColor: value < max
-                      ? buttonColor.withOpacity(0.2)
-                      : Theme.of(context).colorScheme.surfaceVariant,
+                      ? buttonColor.withValues(alpha: 0.2)
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   foregroundColor: value < max ? buttonColor : null,
                 ),
               ),

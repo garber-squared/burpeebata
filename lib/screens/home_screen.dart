@@ -84,6 +84,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Text(
+              'v1.1.0',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+            ),
+          ),
+        ),
         title: const Text('BurpeeBata'),
         centerTitle: true,
         actions: [
@@ -410,8 +422,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: value > min ? () => onChanged(value - 1) : null,
             style: IconButton.styleFrom(
               backgroundColor: value > min
-                  ? buttonColor.withOpacity(0.2)
-                  : Theme.of(context).colorScheme.surfaceVariant,
+                  ? buttonColor.withValues(alpha: 0.2)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               foregroundColor: value > min ? buttonColor : null,
             ),
           ),
@@ -453,8 +465,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: value < max ? () => onChanged(value + 1) : null,
             style: IconButton.styleFrom(
               backgroundColor: value < max
-                  ? buttonColor.withOpacity(0.2)
-                  : Theme.of(context).colorScheme.surfaceVariant,
+                  ? buttonColor.withValues(alpha: 0.2)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               foregroundColor: value < max ? buttonColor : null,
             ),
           ),
