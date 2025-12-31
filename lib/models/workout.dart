@@ -36,6 +36,39 @@ class Workout {
 
   Duration get totalWorkoutDuration => Duration(seconds: totalWorkoutSeconds);
 
+  // Performance Metrics (Design System v2)
+
+  /// Reps per minute - primary intensity metric
+  double get repsPerMinute {
+    if (elapsedSeconds == 0) return 0.0;
+    return (totalReps / elapsedSeconds) * 60;
+  }
+
+  /// Work/rest density - percentage of time spent working vs resting
+  /// Higher = more intense workout
+  double get workRestDensity {
+    if (completedSets == 0) return 0.0;
+    final totalWorkSeconds = secondsPerSet * completedSets;
+    final totalSeconds = elapsedSeconds > 0 ? elapsedSeconds : totalWorkoutSeconds;
+    return (totalWorkSeconds / totalSeconds) * 100;
+  }
+
+  /// Workout intensity score (0-100) based on completion and pace
+  int get intensityScore {
+    if (!completed) return (completedSets / numberOfSets * 50).round();
+
+    // Base score from completion
+    int score = 70;
+
+    // Bonus for completing all reps
+    if (isCompleted) score += 15;
+
+    // Bonus for completing in planned time
+    if (isCompletedInTime) score += 15;
+
+    return score.clamp(0, 100);
+  }
+
   Workout copyWith({
     String? id,
     DateTime? date,

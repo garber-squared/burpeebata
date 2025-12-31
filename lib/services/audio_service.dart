@@ -24,25 +24,65 @@ class AudioService {
     _isInitialized = true;
   }
 
-  Future<void> playCountdownBeep() async {
+  /// Play countdown beep with escalating pitch
+  /// Design System v2: Rising pitch creates urgency
+  Future<void> playCountdownBeep({int secondsRemaining = 3}) async {
     await _beepPlayer.stop();
+
+    // Escalate pitch based on urgency (3s = 1.0x, 2s = 1.1x, 1s = 1.2x)
+    final playbackRate = switch (secondsRemaining) {
+      3 => 1.0,
+      2 => 1.1,
+      1 => 1.2,
+      _ => 1.0,
+    };
+
+    await _beepPlayer.setPlaybackRate(playbackRate);
     await _beepPlayer.play(AssetSource('audio/countdown_beep.mp3'));
   }
 
-  Future<void> playWhistle() async {
+  /// Work start: Sharp, high-urgency signal
+  /// Design System v2: Sharp attack, no tail
+  Future<void> playWorkStart() async {
     await _whistlePlayer.stop();
+    await _whistlePlayer.setPlaybackRate(1.0);
     await _whistlePlayer.play(AssetSource('audio/whistle.mp3'));
   }
 
-  Future<void> playBell() async {
+  /// Rest start: Lower, softer signal
+  /// Design System v2: Lower pitch, less urgent than work
+  Future<void> playRestStart() async {
+    await _pingPlayer.stop();
+    // Lower pitch for rest (90% speed = lower tone)
+    await _pingPlayer.setPlaybackRate(0.9);
+    await _pingPlayer.setVolume(0.7); // Softer volume
+    await _pingPlayer.play(AssetSource('audio/ping.mp3'));
+  }
+
+  /// Set/phase completion: Boxing bell
+  Future<void> playPhaseComplete() async {
     await _bellPlayer.stop();
+    await _bellPlayer.setPlaybackRate(1.0);
     await _bellPlayer.play(AssetSource('audio/boxing_bell.mp3'));
   }
 
-  Future<void> playPing() async {
+  /// Rep tick: Subtle progress indicator
+  Future<void> playRepTick() async {
     await _pingPlayer.stop();
+    await _pingPlayer.setPlaybackRate(1.0);
+    await _pingPlayer.setVolume(0.5); // Quieter for non-critical feedback
     await _pingPlayer.play(AssetSource('audio/ping.mp3'));
   }
+
+  /// Legacy methods for backward compatibility
+  @Deprecated('Use playWorkStart() instead')
+  Future<void> playWhistle() async => playWorkStart();
+
+  @Deprecated('Use playPhaseComplete() instead')
+  Future<void> playBell() async => playPhaseComplete();
+
+  @Deprecated('Use playRepTick() instead')
+  Future<void> playPing() async => playRepTick();
 
   void dispose() {
     _beepPlayer.dispose();

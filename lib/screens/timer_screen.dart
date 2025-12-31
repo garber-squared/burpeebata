@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/workout_config.dart';
@@ -8,6 +9,7 @@ import '../services/timer_service.dart';
 import '../services/storage_service.dart';
 import '../services/workout_service.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
 import 'post_workout_questionnaire_screen.dart';
 
@@ -24,6 +26,8 @@ class _TimerScreenState extends State<TimerScreen> {
   final TimerService _timerService = TimerService();
   final WorkoutService _workoutService = WorkoutService();
   bool _isPaused = false;
+  int _lastSeconds = -1;
+  TimerState _lastState = TimerState.idle;
 
   @override
   void initState() {
@@ -46,10 +50,49 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _onTimerUpdate() {
+    _handleHapticFeedback();
     setState(() {});
     if (_timerService.state == TimerState.finished) {
       _showPostWorkoutQuestionnaire();
     }
+  }
+
+  /// Handle haptic feedback patterns based on workout state
+  void _handleHapticFeedback() {
+    final currentSeconds = _timerService.currentSeconds;
+    final currentState = _timerService.state;
+
+    // Phase transition haptics
+    if (_lastState != currentState) {
+      if (currentState == TimerState.work) {
+        // Work start: single strong tap
+        HapticFeedback.heavyImpact();
+      } else if (currentState == TimerState.rest) {
+        // Rest start: medium tap
+        HapticFeedback.mediumImpact();
+      }
+      _lastState = currentState;
+    }
+
+    // Escalating pattern for final seconds (only if seconds changed)
+    if (currentSeconds != _lastSeconds &&
+        (currentState == TimerState.work || currentState == TimerState.rest)) {
+      if (currentSeconds == 3) {
+        // 3 seconds: light tap
+        HapticFeedback.lightImpact();
+      } else if (currentSeconds == 2) {
+        // 2 seconds: light tap
+        HapticFeedback.lightImpact();
+      } else if (currentSeconds == 1) {
+        // 1 second: strong tap
+        HapticFeedback.heavyImpact();
+      } else if (currentSeconds == 0) {
+        // Completion: long confirmation pulse (simulated with selection click)
+        HapticFeedback.selectionClick();
+      }
+    }
+
+    _lastSeconds = currentSeconds;
   }
 
   Future<void> _showPostWorkoutQuestionnaire() async {
@@ -179,29 +222,35 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   Color _getBackgroundColor() {
-    // Show red during countdown periods (last 3 seconds of work or rest)
-    if (_timerService.state == TimerState.work && _timerService.currentSeconds <= 3) {
-      return Colors.red;
+    // Use Design System v2 color semantics
+    final bgColor = AppTheme.getTimerBackgroundColor(
+      state: _timerService.state,
+      currentSeconds: _timerService.currentSeconds,
+      progress: _timerService.progress,
+    );
+
+    // Return theme colors for finished/idle states
+    if (_timerService.state == TimerState.finished) {
+      return Theme.of(context).colorScheme.primaryContainer;
     }
-    if (_timerService.state == TimerState.rest && _timerService.currentSeconds <= 3) {
-      return Colors.red;
+    if (_timerService.state == TimerState.idle) {
+      return Theme.of(context).scaffoldBackgroundColor;
     }
 
-    switch (_timerService.state) {
-      case TimerState.countdown:
-        return Colors.orange;
-      case TimerState.work:
-        return Colors.green;
-      case TimerState.rest:
-        return Colors.blue;
-      case TimerState.finished:
-        return Theme.of(context).colorScheme.primaryContainer;
-      case TimerState.idle:
-        return Theme.of(context).scaffoldBackgroundColor;
-    }
+    return bgColor;
   }
 
   Widget _buildTimerView() {
+    // Calculate if we're in final seconds for opacity fading
+    final isFinalSeconds = _timerService.currentSeconds <= 3 &&
+        (_timerService.state == TimerState.work ||
+            _timerService.state == TimerState.rest);
+
+    // Calculate if we're in final 5 seconds for pulse animation
+    final isFinal5Seconds = _timerService.currentSeconds <= 5 &&
+        (_timerService.state == TimerState.work ||
+            _timerService.state == TimerState.rest);
+
     return Column(
       children: [
         Expanded(
@@ -209,103 +258,122 @@ class _TimerScreenState extends State<TimerScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  _getStateLabel(),
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                // Set count - appears above timer
+                AnimatedOpacity(
+                  opacity: isFinalSeconds ? 0.4 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    'Set ${_timerService.currentSet} / ${_timerService.totalSets}',
+                    style: AppTypography.tier2(context),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 40),
+
+                // Timer - dominant central element
+                // Progress ring now wraps around the timer
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: CircularProgressIndicator(
-                        value: _timerService.progress,
-                        strokeWidth: 12,
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    // Progress ring animation
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 300),
+                      tween: Tween<double>(
+                        begin: _getProgressRingValue(),
+                        end: _getProgressRingValue(),
+                      ),
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: isFinal5Seconds ? 1.02 : 1.0,
+                          child: SizedBox(
+                            width: 240,
+                            height: 240,
+                            child: CircularProgressIndicator(
+                              value: value,
+                              strokeWidth: 14,
+                              backgroundColor: Colors.white24,
+                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // State label
+                    Positioned(
+                      top: 50,
+                      child: AnimatedOpacity(
+                        opacity: isFinalSeconds ? 0.4 : 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Text(
+                          _getStateLabel(),
+                          style: AppTypography.tier3(context).copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.0,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                    Text(
-                      '${_timerService.currentSeconds}',
-                      style: const TextStyle(
-                        fontSize: 72,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    // Timer number - absolute focus
+                    AnimatedScale(
+                      scale: isFinalSeconds ? 1.04 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Text(
+                        '${_timerService.currentSeconds}',
+                        style: AppTypography.tier1(context),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-                if (_timerService.state == TimerState.work)
-                  Text(
-                    'Rep ${_timerService.currentRep}/${_timerService.repsPerSet}',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  )
-                else if (_timerService.state == TimerState.rest)
-                  Text(
-                    '${_calculateCompletedPercentage()}% done',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      color: Colors.white70,
-                    ),
-                  )
-                else
-                  Text(
-                    '${widget.config.repsPerSet} reps',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      color: Colors.white70,
-                    ),
-                  ),
-                const SizedBox(height: 32),
-                Text(
-                  'Set ${_timerService.currentSet} of ${_timerService.totalSets}',
-                  style: const TextStyle(
-                    fontSize: 40,
-                    color: Colors.white,
-                  ),
+
+                const SizedBox(height: 40),
+
+                // Reps/percentage info - below timer
+                AnimatedOpacity(
+                  opacity: isFinalSeconds ? 0.4 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildInfoText(),
                 ),
               ],
             ),
           ),
         ),
+
+        // Controls - fatigue-safe positioning
         Padding(
           padding: const EdgeInsets.all(32),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              FloatingActionButton(
+              // Pause button - large, single tap
+              FloatingActionButton.large(
+                heroTag: 'pause',
                 onPressed: _togglePause,
                 backgroundColor: Colors.white,
                 child: Icon(
                   _isPaused ? Icons.play_arrow : Icons.pause,
                   color: _getBackgroundColor(),
-                  size: 32,
+                  size: 40,
                 ),
               ),
+              // Stop button - smaller, requires long press
               FloatingActionButton(
-                onPressed: () async {
-                  if (await _onWillPop()) {
-                    if (mounted) {
-                      Navigator.pop(context);
+                heroTag: 'stop',
+                onPressed: null, // Disabled for tap
+                backgroundColor: Colors.white70,
+                child: GestureDetector(
+                  onLongPress: () async {
+                    if (await _onWillPop()) {
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     }
-                  }
-                },
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.stop,
-                  color: Colors.red,
-                  size: 32,
+                  },
+                  child: const Icon(
+                    Icons.stop,
+                    color: Colors.red,
+                    size: 32,
+                  ),
                 ),
               ),
             ],
@@ -313,6 +381,43 @@ class _TimerScreenState extends State<TimerScreen> {
         ),
       ],
     );
+  }
+
+  /// Get progress ring value based on workout phase
+  /// - Work phase: ring SHRINKS (1.0 → 0.0) as time is consumed
+  /// - Rest phase: ring FILLS (0.0 → 1.0) as recovery accumulates
+  double _getProgressRingValue() {
+    if (_timerService.state == TimerState.work) {
+      // Work: show remaining time (shrinks from full to empty)
+      return _timerService.progress;
+    } else if (_timerService.state == TimerState.rest) {
+      // Rest: show accumulating rest (fills from empty to full)
+      return _timerService.progress;
+    } else if (_timerService.state == TimerState.countdown) {
+      // Countdown: shrinks like work phase
+      return _timerService.progress;
+    }
+    return 0.0;
+  }
+
+  /// Build info text based on current state
+  Widget _buildInfoText() {
+    if (_timerService.state == TimerState.work) {
+      return Text(
+        'Rep ${_timerService.currentRep} / ${_timerService.repsPerSet}',
+        style: AppTypography.tier2(context),
+      );
+    } else if (_timerService.state == TimerState.rest) {
+      return Text(
+        '${_calculateCompletedPercentage()}% complete',
+        style: AppTypography.tier2(context, color: Colors.white70),
+      );
+    } else {
+      return Text(
+        '${widget.config.repsPerSet} reps per set',
+        style: AppTypography.tier2(context, color: Colors.white70),
+      );
+    }
   }
 
   String _getStateLabel() {

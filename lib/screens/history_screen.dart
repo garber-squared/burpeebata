@@ -146,14 +146,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildWorkoutCard(Workout workout) {
+    final index = _workouts.indexOf(workout);
+    final previousWorkout = index < _workouts.length - 1 ? _workouts[index + 1] : null;
+    final isIncomplete = !workout.completed;
+
     final dateStr = '${workout.date.month}/${workout.date.day}/${workout.date.year}';
     final timeStr = '${workout.date.hour}:${workout.date.minute.toString().padLeft(2, '0')}';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      // Design System v2: Desaturate incomplete workouts
+      color: isIncomplete
+          ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+          : null,
+      child: Opacity(
+        opacity: isIncomplete ? 0.7 : 1.0,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -229,6 +239,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ],
             ),
+
+            // Performance Metrics (Design System v2)
+            if (workout.elapsedSeconds > 0) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildMetricChip(
+                    label: 'Reps/min',
+                    value: workout.repsPerMinute.toStringAsFixed(1),
+                    trend: previousWorkout != null
+                        ? _getTrend(workout.repsPerMinute, previousWorkout.repsPerMinute)
+                        : null,
+                  ),
+                  _buildMetricChip(
+                    label: 'Density',
+                    value: '${workout.workRestDensity.toStringAsFixed(0)}%',
+                    trend: previousWorkout != null
+                        ? _getTrend(workout.workRestDensity, previousWorkout.workRestDensity)
+                        : null,
+                  ),
+                  _buildMetricChip(
+                    label: 'Intensity',
+                    value: '${workout.intensityScore}',
+                    trend: previousWorkout != null
+                        ? _getTrend(workout.intensityScore.toDouble(), previousWorkout.intensityScore.toDouble())
+                        : null,
+                    isBest: _isBestWorkout(workout, 'intensity'),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -248,6 +292,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -263,5 +308,105 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
       ],
     );
+  }
+
+  /// Build performance metric chip with trend arrow (Design System v2)
+  Widget _buildMetricChip({
+    required String label,
+    required String value,
+    String? trend,
+    bool isBest = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isBest
+            ? Colors.amber.withValues(alpha: 0.2)
+            : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: isBest
+            ? Border.all(color: Colors.amber, width: 1.5)
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isBest) ...[
+            const Icon(Icons.star, size: 14, color: Colors.amber),
+            const SizedBox(width: 4),
+          ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  if (trend != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      trend,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _getTrendColor(trend),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Get trend arrow: ↑ (better), ↓ (worse), ↔ (same)
+  String? _getTrend(double current, double previous) {
+    if (previous == 0) return null;
+    final diff = ((current - previous) / previous * 100).abs();
+
+    // Less than 5% change = stable
+    if (diff < 5) return '↔';
+
+    return current > previous ? '↑' : '↓';
+  }
+
+  /// Get color for trend arrow
+  Color _getTrendColor(String trend) {
+    return switch (trend) {
+      '↑' => Colors.green,
+      '↓' => Colors.red,
+      '↔' => Colors.grey,
+      _ => Colors.grey,
+    };
+  }
+
+  /// Check if this is the best workout for a given metric
+  bool _isBestWorkout(Workout workout, String metric) {
+    if (_workouts.isEmpty) return false;
+
+    return switch (metric) {
+      'intensity' => _workouts.every((w) => workout.intensityScore >= w.intensityScore),
+      'reps' => _workouts.every((w) => workout.totalReps >= w.totalReps),
+      'repsPerMin' => _workouts.every((w) => workout.repsPerMinute >= w.repsPerMinute),
+      _ => false,
+    };
   }
 }

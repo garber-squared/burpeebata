@@ -98,8 +98,8 @@ class TimerService extends ChangeNotifier {
     if (!_workoutStarted) {
       _workoutStarted = true;
     }
-    // Play whistle to signal start of work
-    _audioService.playWhistle();
+    // Play sharp work start signal (Design System v2)
+    _audioService.playWorkStart();
     notifyListeners();
     _startTimer();
   }
@@ -107,6 +107,8 @@ class TimerService extends ChangeNotifier {
   void _startRest() {
     _state = TimerState.rest;
     _currentSeconds = _restSeconds;
+    // Play softer rest start signal (Design System v2)
+    _audioService.playRestStart();
     notifyListeners();
     _startTimer();
   }
@@ -126,25 +128,25 @@ class TimerService extends ChangeNotifier {
 
     if (_currentSeconds > 1) {
       _currentSeconds--;
-      // Play countdown beep in last 3 seconds of initial countdown
+      // Play escalating countdown beep in last 3 seconds (Design System v2)
       if (_state == TimerState.countdown && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep();
+        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
       }
-      // Play countdown beep in last 3 seconds of work period
+      // Play escalating countdown beep in last 3 seconds of work period
       if (_state == TimerState.work && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep();
+        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
       }
-      // Play ping sound when rep changes (after first rep)
+      // Play rep tick sound when rep changes (Design System v2)
       if (_state == TimerState.work && _repsPerSet > 1) {
         final newRep = currentRep;
         if (newRep > _lastRep) {
-          _audioService.playPing();
+          _audioService.playRepTick();
           _lastRep = newRep;
         }
       }
-      // Play countdown beep in last 3 seconds of rest period
+      // Play escalating countdown beep in last 3 seconds of rest period
       if (_state == TimerState.rest && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep();
+        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
       }
       notifyListeners();
       return;
@@ -158,8 +160,8 @@ class TimerService extends ChangeNotifier {
         _startWork();
         break;
       case TimerState.work:
-        // Play bell when work ends
-        _audioService.playBell();
+        // Play phase completion sound (Design System v2)
+        _audioService.playPhaseComplete();
         if (_currentSet < _totalSets) {
           _currentSet++;
           _startRest();
