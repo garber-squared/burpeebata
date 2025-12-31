@@ -1,5 +1,3 @@
-import 'package:uuid/uuid.dart';
-
 /// Represents a user's optional profile information.
 /// All fields except userId are optional to allow gradual profile completion.
 class UserProfile {

@@ -158,8 +158,15 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         backgroundColor: _getBackgroundColor(),
         body: SafeArea(

@@ -1,4 +1,4 @@
-FROM ghcr.io/cirruslabs/flutter:3.29.3
+FROM ghcr.io/cirruslabs/flutter:3.38.0
 
 # Install additional dependencies
 RUN apt-get update && apt-get install -y \
@@ -17,6 +17,9 @@ RUN groupadd -g 1000 flutter 2>/dev/null || true && \
 
 # Set up Flutter SDK permissions - make writable by any user for development
 RUN chmod -R 777 /sdks/flutter
+
+# Set up Android SDK permissions - make writable by any user for development
+RUN chmod -R 777 /opt/android-sdk-linux
 
 # Create app directory and set ownership
 RUN mkdir -p /app && chown -R 1000:1000 /app
