@@ -14,7 +14,7 @@ enum TimerState {
 class TimerService extends ChangeNotifier {
   Timer? _timer;
   TimerState _state = TimerState.idle;
-  int _currentSeconds = 0;
+  int _currentCentiseconds = 0;  // Track time in centiseconds (1/100th of a second)
   int _currentSet = 0;
   int _totalSets = 0;
   int _workSeconds = 0;
@@ -30,7 +30,7 @@ class TimerService extends ChangeNotifier {
       : _audioService = audioService ?? AudioService();
 
   TimerState get state => _state;
-  int get currentSeconds => _currentSeconds;
+  double get currentSeconds => _currentCentiseconds / 100.0;
   int get currentSet => _currentSet;
   int get totalSets => _totalSets;
   int get workSeconds => _workSeconds;
@@ -43,7 +43,7 @@ class TimerService extends ChangeNotifier {
       return 0;
     }
 
-    final elapsedSeconds = _workSeconds - _currentSeconds;
+    final elapsedSeconds = _workSeconds - currentSeconds;
     final secondsPerRep = _workSeconds / _repsPerSet;
 
     if (secondsPerRep <= 0) {
@@ -59,13 +59,13 @@ class TimerService extends ChangeNotifier {
   double get progress {
     if (_state == TimerState.idle || _state == TimerState.finished) return 0;
     if (_state == TimerState.countdown) {
-      return 1 - (_currentSeconds / _initialCountdownSeconds);
+      return 1 - (currentSeconds / _initialCountdownSeconds);
     }
     if (_state == TimerState.work) {
-      return 1 - (_currentSeconds / _workSeconds);
+      return 1 - (currentSeconds / _workSeconds);
     }
     if (_state == TimerState.rest) {
-      return 1 - (_currentSeconds / _restSeconds);
+      return 1 - (currentSeconds / _restSeconds);
     }
     return 0;
   }
@@ -85,14 +85,14 @@ class TimerService extends ChangeNotifier {
 
   void _startCountdown() {
     _state = TimerState.countdown;
-    _currentSeconds = _initialCountdownSeconds;
+    _currentCentiseconds = _initialCountdownSeconds * 100;
     notifyListeners();
     _startTimer();
   }
 
   void _startWork() {
     _state = TimerState.work;
-    _currentSeconds = _workSeconds;
+    _currentCentiseconds = _workSeconds * 100;
     _lastRep = 1; // Reset to first rep
     // Mark workout as started on first work set (excludes countdown from elapsed time)
     if (!_workoutStarted) {
@@ -106,7 +106,7 @@ class TimerService extends ChangeNotifier {
 
   void _startRest() {
     _state = TimerState.rest;
-    _currentSeconds = _restSeconds;
+    _currentCentiseconds = _restSeconds * 100;
     // Play softer rest start signal (Design System v2)
     _audioService.playRestStart();
     notifyListeners();
@@ -115,45 +115,15 @@ class TimerService extends ChangeNotifier {
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(const Duration(milliseconds: 10), (_) {
       _tick();
     });
   }
 
   void _tick() {
-    // Track elapsed time only after workout has started (excludes countdown)
-    if (_workoutStarted) {
-      _elapsedWorkoutSeconds++;
-    }
-
-    if (_currentSeconds > 1) {
-      _currentSeconds--;
-      // Play escalating countdown beep in last 3 seconds (Design System v2)
-      if (_state == TimerState.countdown && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
-      }
-      // Play escalating countdown beep in last 3 seconds of work period
-      if (_state == TimerState.work && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
-      }
-      // Play rep tick sound when rep changes (Design System v2)
-      if (_state == TimerState.work && _repsPerSet > 1) {
-        final newRep = currentRep;
-        if (newRep > _lastRep) {
-          _audioService.playRepTick();
-          _lastRep = newRep;
-        }
-      }
-      // Play escalating countdown beep in last 3 seconds of rest period
-      if (_state == TimerState.rest && _currentSeconds <= 3) {
-        _audioService.playCountdownBeep(secondsRemaining: _currentSeconds);
-      }
-      notifyListeners();
-      return;
-    }
-
-    // Timer reached 0
-    _timer?.cancel();
+    if (_currentCentiseconds <= 0) {
+      // Timer reached 0 - transition states
+      _timer?.cancel();
 
     switch (_state) {
       case TimerState.countdown:
@@ -177,11 +147,52 @@ class TimerService extends ChangeNotifier {
       case TimerState.finished:
         break;
     }
+      return;
+    }
+
+    // Decrement timer
+    _currentCentiseconds--;
+
+    // Track elapsed time only after workout has started (excludes countdown)
+    // Increment elapsed seconds every 100 centiseconds (1 second)
+    if (_workoutStarted && _currentCentiseconds % 100 == 99) {
+      _elapsedWorkoutSeconds++;
+    }
+
+    // Get current seconds for audio cue checks
+    final secondsRemaining = currentSeconds.ceil();
+
+    // Play escalating countdown beep in last 3 seconds (Design System v2)
+    // Only trigger once per second (when we cross the whole second boundary)
+    if (_currentCentiseconds % 100 == 99) {
+      if (_state == TimerState.countdown && secondsRemaining <= 3 && secondsRemaining > 0) {
+        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+      }
+      // Play escalating countdown beep in last 3 seconds of work period
+      if (_state == TimerState.work && secondsRemaining <= 3 && secondsRemaining > 0) {
+        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+      }
+      // Play escalating countdown beep in last 3 seconds of rest period
+      if (_state == TimerState.rest && secondsRemaining <= 3 && secondsRemaining > 0) {
+        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+      }
+    }
+
+    // Play rep tick sound when rep changes (Design System v2)
+    if (_state == TimerState.work && _repsPerSet > 1) {
+      final newRep = currentRep;
+      if (newRep > _lastRep) {
+        _audioService.playRepTick();
+        _lastRep = newRep;
+      }
+    }
+
+    notifyListeners();
   }
 
   void _finish() {
     _state = TimerState.finished;
-    _currentSeconds = 0;
+    _currentCentiseconds = 0;
     notifyListeners();
   }
 
@@ -198,7 +209,7 @@ class TimerService extends ChangeNotifier {
   void stop() {
     _timer?.cancel();
     _state = TimerState.idle;
-    _currentSeconds = 0;
+    _currentCentiseconds = 0;
     _currentSet = 0;
     _elapsedWorkoutSeconds = 0;
     _workoutStarted = false;
