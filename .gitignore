@@ -45,3 +45,11 @@ app.*.map.json
 .gradle
 
 archive/
+
+# Node.js related (for import scripts)
+node_modules/
+package-lock.json
+
+# CSV data exports (sensitive user data)
+*.csv
+*_export.csv

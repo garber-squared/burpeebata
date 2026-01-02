@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"burpeebata-dev","appId":"1:815039019028:android:f8256fbc4226e534290f01","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"burpeebata-dev","configurations":{"android":"1:815039019028:android:f8256fbc4226e534290f01","ios":"1:815039019028:ios:78a3b77cfcee964e290f01","macos":"1:815039019028:ios:78a3b77cfcee964e290f01","web":"1:815039019028:web:2dc89b63f5d650da290f01","windows":"1:815039019028:web:1ef7f4136db991e5290f01"}},"lib/firebase_options_prod.dart":{"projectId":"burpeebata","configurations":{"web":"1:726464864566:web:3f67cb2b748b5317931397"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "burpeebata-dev",
+          "appId": "1:815039019028:android:f8256fbc4226e534290f01",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "burpeebata-dev",
+          "configurations": {
+            "android": "1:815039019028:android:f8256fbc4226e534290f01",
+            "ios": "1:815039019028:ios:78a3b77cfcee964e290f01",
+            "macos": "1:815039019028:ios:78a3b77cfcee964e290f01",
+            "web": "1:815039019028:web:2dc89b63f5d650da290f01",
+            "windows": "1:815039019028:web:1ef7f4136db991e5290f01"
+          }
+        },
+        "lib/firebase_options_prod.dart": {
+          "projectId": "burpeebata",
+          "configurations": {
+            "web": "1:726464864566:web:3f67cb2b748b5317931397"
+          }
+        }
+      }
+    }
+  }
+}
