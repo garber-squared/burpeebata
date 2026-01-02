@@ -193,6 +193,8 @@ class TimerService extends ChangeNotifier {
   void _finish() {
     _state = TimerState.finished;
     _currentCentiseconds = 0;
+    // Play victorious sound for workout completion
+    _audioService.playVictory();
     notifyListeners();
   }
 

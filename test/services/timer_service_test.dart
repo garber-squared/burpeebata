@@ -23,6 +23,7 @@ void main() {
       when(mockAudioService.playRestStart()).thenAnswer((_) async {});
       when(mockAudioService.playPhaseComplete()).thenAnswer((_) async {});
       when(mockAudioService.playRepTick()).thenAnswer((_) async {});
+      when(mockAudioService.playVictory()).thenAnswer((_) async {});
 
       timerService = TimerService(audioService: mockAudioService);
     });

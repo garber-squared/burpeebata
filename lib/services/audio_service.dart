@@ -9,6 +9,7 @@ class AudioService {
   final AudioPlayer _whistlePlayer = AudioPlayer();
   final AudioPlayer _bellPlayer = AudioPlayer();
   final AudioPlayer _pingPlayer = AudioPlayer();
+  final AudioPlayer _victoryPlayer = AudioPlayer();
 
   bool _isInitialized = false;
 
@@ -20,6 +21,7 @@ class AudioService {
     await _whistlePlayer.setReleaseMode(ReleaseMode.stop);
     await _bellPlayer.setReleaseMode(ReleaseMode.stop);
     await _pingPlayer.setReleaseMode(ReleaseMode.stop);
+    await _victoryPlayer.setReleaseMode(ReleaseMode.stop);
 
     _isInitialized = true;
   }
@@ -74,6 +76,17 @@ class AudioService {
     await _pingPlayer.play(AssetSource('audio/ping.mp3'));
   }
 
+  /// Victory fanfare: Celebratory sound for workout completion
+  /// TODO: Add a proper victory trumpet sound file (audio/victory.mp3)
+  /// For now, uses whistle at higher pitch for triumphant effect
+  Future<void> playVictory() async {
+    await _victoryPlayer.stop();
+    // High pitch for celebration (1.3x speed = triumphant tone)
+    await _victoryPlayer.setPlaybackRate(1.3);
+    await _victoryPlayer.setVolume(1.0); // Full volume for celebration
+    await _victoryPlayer.play(AssetSource('audio/whistle.mp3'));
+  }
+
   /// Legacy methods for backward compatibility
   @Deprecated('Use playWorkStart() instead')
   Future<void> playWhistle() async => playWorkStart();
@@ -89,6 +102,7 @@ class AudioService {
     _whistlePlayer.dispose();
     _bellPlayer.dispose();
     _pingPlayer.dispose();
+    _victoryPlayer.dispose();
     _isInitialized = false;
   }
 }
