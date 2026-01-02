@@ -26,7 +26,7 @@ class _TimerScreenState extends State<TimerScreen> {
   final TimerService _timerService = TimerService();
   final WorkoutService _workoutService = WorkoutService();
   bool _isPaused = false;
-  int _lastSeconds = -1;
+  int _lastWholeSeconds = -1;
   TimerState _lastState = TimerState.idle;
 
   @override
@@ -59,7 +59,7 @@ class _TimerScreenState extends State<TimerScreen> {
 
   /// Handle haptic feedback patterns based on workout state
   void _handleHapticFeedback() {
-    final currentSeconds = _timerService.currentSeconds;
+    final currentWholeSeconds = _timerService.currentSeconds.ceil();
     final currentState = _timerService.state;
 
     // Phase transition haptics
@@ -74,25 +74,25 @@ class _TimerScreenState extends State<TimerScreen> {
       _lastState = currentState;
     }
 
-    // Escalating pattern for final seconds (only if seconds changed)
-    if (currentSeconds != _lastSeconds &&
+    // Escalating pattern for final seconds (only when crossing whole second boundaries)
+    if (currentWholeSeconds != _lastWholeSeconds &&
         (currentState == TimerState.work || currentState == TimerState.rest)) {
-      if (currentSeconds == 3) {
+      if (currentWholeSeconds == 3) {
         // 3 seconds: light tap
         HapticFeedback.lightImpact();
-      } else if (currentSeconds == 2) {
+      } else if (currentWholeSeconds == 2) {
         // 2 seconds: light tap
         HapticFeedback.lightImpact();
-      } else if (currentSeconds == 1) {
+      } else if (currentWholeSeconds == 1) {
         // 1 second: strong tap
         HapticFeedback.heavyImpact();
-      } else if (currentSeconds == 0) {
+      } else if (currentWholeSeconds == 0) {
         // Completion: long confirmation pulse (simulated with selection click)
         HapticFeedback.selectionClick();
       }
     }
 
-    _lastSeconds = currentSeconds;
+    _lastWholeSeconds = currentWholeSeconds;
   }
 
   Future<void> _showPostWorkoutQuestionnaire() async {
@@ -225,7 +225,7 @@ class _TimerScreenState extends State<TimerScreen> {
     // Use Design System v2 color semantics
     final bgColor = AppTheme.getTimerBackgroundColor(
       state: _timerService.state,
-      currentSeconds: _timerService.currentSeconds,
+      currentSeconds: _timerService.currentSeconds.ceil(),
       progress: _timerService.progress,
     );
 
@@ -319,7 +319,7 @@ class _TimerScreenState extends State<TimerScreen> {
                       scale: isFinalSeconds ? 1.04 : 1.0,
                       duration: const Duration(milliseconds: 200),
                       child: Text(
-                        '${_timerService.currentSeconds}',
+                        _timerService.currentSeconds.toStringAsFixed(2),
                         style: AppTypography.tier1(context),
                       ),
                     ),

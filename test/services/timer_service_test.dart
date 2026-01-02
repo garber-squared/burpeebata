@@ -18,10 +18,12 @@ void main() {
       mockAudioService = MockAudioService();
 
       when(mockAudioService.init()).thenAnswer((_) async {});
-      when(mockAudioService.playCountdownBeep()).thenAnswer((_) async {});
-      when(mockAudioService.playWhistle()).thenAnswer((_) async {});
-      when(mockAudioService.playBell()).thenAnswer((_) async {});
-      when(mockAudioService.playPing()).thenAnswer((_) async {});
+      when(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining'))).thenAnswer((_) async {});
+      when(mockAudioService.playWorkStart()).thenAnswer((_) async {});
+      when(mockAudioService.playRestStart()).thenAnswer((_) async {});
+      when(mockAudioService.playPhaseComplete()).thenAnswer((_) async {});
+      when(mockAudioService.playRepTick()).thenAnswer((_) async {});
+      when(mockAudioService.playVictory()).thenAnswer((_) async {});
 
       timerService = TimerService(audioService: mockAudioService);
     });
@@ -36,7 +38,7 @@ void main() {
       });
 
       test('currentSeconds is 0', () {
-        expect(timerService.currentSeconds, equals(0));
+        expect(timerService.currentSeconds, equals(0.0));
       });
 
       test('currentSet is 0', () {
@@ -103,7 +105,7 @@ void main() {
 
         await timerService.startWorkout(config);
 
-        expect(timerService.currentSeconds, equals(10));
+        expect(timerService.currentSeconds, equals(10.0));
       });
 
       test('sets countdown seconds to custom initialCountdown', () async {
@@ -111,7 +113,7 @@ void main() {
 
         await timerService.startWorkout(config);
 
-        expect(timerService.currentSeconds, equals(5));
+        expect(timerService.currentSeconds, equals(5.0));
       });
     });
 
@@ -151,7 +153,7 @@ void main() {
         timerService.stop();
 
         expect(timerService.state, equals(TimerState.idle));
-        expect(timerService.currentSeconds, equals(0));
+        expect(timerService.currentSeconds, equals(0.0));
         expect(timerService.currentSet, equals(0));
         expect(timerService.isRunning, equals(false));
       });
@@ -226,15 +228,15 @@ void main() {
 
           // Fast-forward 1 second (5 -> 4, no beep yet)
           async.elapse(const Duration(seconds: 1));
-          verifyNever(mockAudioService.playCountdownBeep());
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining')));
 
           // At 2 seconds elapsed (5 -> 4 -> 3), beep should play
           async.elapse(const Duration(seconds: 1));
-          verify(mockAudioService.playCountdownBeep()).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
 
           // At 3 seconds elapsed (3 -> 2), another beep
           async.elapse(const Duration(seconds: 1));
-          verify(mockAudioService.playCountdownBeep()).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
         });
       });
 
@@ -246,19 +248,19 @@ void main() {
 
           // Fast-forward past first 6 seconds (no beeps yet, at 4 seconds remaining)
           async.elapse(const Duration(seconds: 6));
-          verifyNever(mockAudioService.playCountdownBeep());
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining')));
 
           // At 7 seconds elapsed (10 -> ... -> 3), beep should play
           async.elapse(const Duration(seconds: 1));
-          verify(mockAudioService.playCountdownBeep()).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
 
           // Continue to 2 seconds remaining
           async.elapse(const Duration(seconds: 1));
-          verify(mockAudioService.playCountdownBeep()).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
 
           // Continue to 1 second remaining
           async.elapse(const Duration(seconds: 1));
-          verify(mockAudioService.playCountdownBeep()).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 1)).called(1);
         });
       });
     });
@@ -396,8 +398,8 @@ void main() {
       });
     });
 
-    group('ping sound on rep change', () {
-      test('does not play ping at start of work (rep 1)', () {
+    group('rep tick sound on rep change', () {
+      test('does not play rep tick at start of work (rep 1)', () {
         fakeAsync((async) {
           const config = WorkoutConfig(
             repsPerSet: 5,
@@ -415,12 +417,12 @@ void main() {
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(1));
 
-          // Ping should not have been called yet
-          verifyNever(mockAudioService.playPing());
+          // RepTick should not have been called yet
+          verifyNever(mockAudioService.playRepTick());
         });
       });
 
-      test('plays ping when rep changes from 1 to 2', () {
+      test('plays rep tick when rep changes from 1 to 2', () {
         fakeAsync((async) {
           const config = WorkoutConfig(
             repsPerSet: 5,
@@ -437,12 +439,12 @@ void main() {
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(2));
 
-          // Ping should have been called once
-          verify(mockAudioService.playPing()).called(1);
+          // RepTick should have been called once
+          verify(mockAudioService.playRepTick()).called(1);
         });
       });
 
-      test('plays ping on each rep change', () {
+      test('plays rep tick on each rep change', () {
         fakeAsync((async) {
           const config = WorkoutConfig(
             repsPerSet: 5,
@@ -459,12 +461,12 @@ void main() {
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(4));
 
-          // Ping should have been called 3 times (rep 2, 3, 4)
-          verify(mockAudioService.playPing()).called(3);
+          // RepTick should have been called 3 times (rep 2, 3, 4)
+          verify(mockAudioService.playRepTick()).called(3);
         });
       });
 
-      test('does not play ping when repsPerSet is 1', () {
+      test('does not play rep tick when repsPerSet is 1', () {
         fakeAsync((async) {
           const config = WorkoutConfig(
             repsPerSet: 1,
@@ -480,8 +482,8 @@ void main() {
 
           expect(timerService.state, equals(TimerState.work));
 
-          // Ping should never be called when there's only 1 rep
-          verifyNever(mockAudioService.playPing());
+          // RepTick should never be called when there's only 1 rep
+          verifyNever(mockAudioService.playRepTick());
         });
       });
     });
@@ -545,8 +547,9 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s)
-          async.elapse(const Duration(seconds: 3));
+          // Elapse countdown (3s) + a tiny bit more to ensure all ticks process
+          async.elapse(const Duration(seconds: 3, milliseconds: 10));
+          async.flushTimers();
 
           // Now in work state
           expect(timerService.state, equals(TimerState.work));
@@ -555,6 +558,7 @@ void main() {
 
           // Elapse 1 more second of work
           async.elapse(const Duration(seconds: 1));
+          async.flushTimers();
 
           // Now elapsed should be 1
           expect(timerService.elapsedWorkoutSeconds, equals(1));
@@ -616,8 +620,9 @@ void main() {
           // 2 rest periods * 5s = 10s
           // Total = 40s
 
-          // Elapse countdown (3s) + full workout (40s)
-          async.elapse(const Duration(seconds: 43));
+          // Elapse countdown (3s) + full workout (40s) + extra time to process final tick
+          async.elapse(const Duration(seconds: 43, milliseconds: 50));
+          async.flushTimers();
 
           expect(timerService.state, equals(TimerState.finished));
           expect(timerService.elapsedWorkoutSeconds, equals(40));
