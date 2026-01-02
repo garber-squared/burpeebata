@@ -2,10 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/workout.dart';
 
 /// Service for managing workout data in Firestore
+/// Workouts are stored in a subcollection under each user: users/{userId}/workouts
 class WorkoutService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
   static const String _usersCollection = 'users';
   static const String _workoutsSubcollection = 'workouts';
+
+  /// Create WorkoutService with optional Firestore instance (for testing)
+  WorkoutService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Get reference to user's workouts collection
   CollectionReference _workoutsCollection(String userId) {
@@ -84,6 +89,49 @@ class WorkoutService {
       await batch.commit();
     } catch (e) {
       throw WorkoutServiceException('Failed to delete all workouts: $e');
+    }
+  }
+
+  /// Alias for deleteAllWorkouts (matches StorageService interface)
+  Future<void> clearAllWorkouts(String userId) async {
+    return deleteAllWorkouts(userId);
+  }
+
+  /// Get workouts within a date range
+  Future<List<Workout>> getWorkoutsInRange(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    try {
+      final querySnapshot = await _workoutsCollection(userId)
+          .where('date',
+              isGreaterThanOrEqualTo: startDate.toIso8601String())
+          .where('date', isLessThanOrEqualTo: endDate.toIso8601String())
+          .orderBy('date', descending: true)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => Workout.fromJson(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw WorkoutServiceException('Failed to get workouts in range: $e');
+    }
+  }
+
+  /// Get recent workouts (limit to n most recent)
+  Future<List<Workout>> getRecentWorkouts(String userId, int limit) async {
+    try {
+      final querySnapshot = await _workoutsCollection(userId)
+          .orderBy('date', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => Workout.fromJson(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw WorkoutServiceException('Failed to get recent workouts: $e');
     }
   }
 
