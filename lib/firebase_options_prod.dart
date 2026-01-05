@@ -21,25 +21,13 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -53,6 +41,42 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDyMJag5k07ZTPQLCJZxchrqDZzt4xjEiA',
+    appId: '1:726464864566:web:3f67cb2b748b5317931397',
+    messagingSenderId: '726464864566',
+    projectId: 'burpeebata',
+    authDomain: 'burpeebata.firebaseapp.com',
+    storageBucket: 'burpeebata.firebasestorage.app',
+    measurementId: 'G-88KPSLSJP2',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBwMuIejR4uFtFhi0oSM9FRoj8yJ8GrYQE',
+    appId: '1:726464864566:android:6d06c460175d3fbb931397',
+    messagingSenderId: '726464864566',
+    projectId: 'burpeebata',
+    storageBucket: 'burpeebata.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDyMJag5k07ZTPQLCJZxchrqDZzt4xjEiA',
+    appId: '1:726464864566:ios:YOUR_IOS_APP_ID',
+    messagingSenderId: '726464864566',
+    projectId: 'burpeebata',
+    storageBucket: 'burpeebata.firebasestorage.app',
+    iosBundleId: 'com.burpeebata.app',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyDyMJag5k07ZTPQLCJZxchrqDZzt4xjEiA',
+    appId: '1:726464864566:ios:YOUR_IOS_APP_ID',
+    messagingSenderId: '726464864566',
+    projectId: 'burpeebata',
+    storageBucket: 'burpeebata.firebasestorage.app',
+    iosBundleId: 'com.burpeebata.app',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyDyMJag5k07ZTPQLCJZxchrqDZzt4xjEiA',
     appId: '1:726464864566:web:3f67cb2b748b5317931397',
     messagingSenderId: '726464864566',
