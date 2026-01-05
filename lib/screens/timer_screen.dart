@@ -140,19 +140,30 @@ class _TimerScreenState extends State<TimerScreen> {
       elapsedSeconds: elapsedSeconds,
     );
 
+    debugPrint('=== TimerScreen: Saving workout ===');
+    debugPrint('Workout ID: ${workout.id}');
+
     // Save to local storage
     await StorageService.saveWorkout(workout);
+    debugPrint('Saved workout to local storage');
 
     // Save to Firestore if user is authenticated and not anonymous
     if (mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      debugPrint('User authenticated: ${authProvider.isAuthenticated}');
+      debugPrint('User is anonymous: ${authProvider.isAnonymous}');
+      debugPrint('User ID: ${authProvider.user?.uid}');
       if (authProvider.isAuthenticated && !authProvider.isAnonymous) {
         try {
+          debugPrint('Attempting to save workout to Firestore...');
           await _workoutService.saveWorkout(authProvider.user!.uid, workout);
+          debugPrint('Successfully saved workout to Firestore');
         } catch (e) {
           // Log error but don't fail the save - local storage already succeeded
           debugPrint('Failed to save workout to Firestore: $e');
         }
+      } else {
+        debugPrint('Skipping Firestore save (user is anonymous or not authenticated)');
       }
     }
   }

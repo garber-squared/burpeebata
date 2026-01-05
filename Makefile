@@ -35,6 +35,11 @@ doctor:
 	docker compose exec flutter flutter doctor
 
 apk:
+	@echo "Building PRODUCTION APK with production Firebase (burpeebata)..."
+	docker compose exec flutter flutter build apk --release --dart-define=PRODUCTION=true --verbose
+
+apk-dev:
+	@echo "Building DEVELOPMENT APK with dev Firebase (burpeebata-dev)..."
 	docker compose exec flutter flutter build apk --release --verbose
 
 test:
@@ -44,13 +49,19 @@ mocks:
 	docker compose exec flutter flutter pub run build_runner build
 
 build-web:
+	@echo "Building PRODUCTION web app with production Firebase (burpeebata)..."
+	docker compose exec flutter flutter build web --release --dart-define=PRODUCTION=true --verbose
+
+build-web-dev:
+	@echo "Building DEVELOPMENT web app with dev Firebase (burpeebata-dev)..."
 	docker compose exec flutter flutter build web --release --verbose
 
 pub-get:
 	docker compose exec flutter flutter pub get
 
 build-android:
-	docker compose exec flutter flutter build apk --release --verbose
+	@echo "Building PRODUCTION APK with production Firebase (burpeebata)..."
+	docker compose exec flutter flutter build apk --release --dart-define=PRODUCTION=true --verbose
 
 adb-install:
 	adb install -r build/app/outputs/flutter-apk/app-release.apk

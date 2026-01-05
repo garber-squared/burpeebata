@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "815039019028",
-    "project_id": "burpeebata-dev",
-    "storage_bucket": "burpeebata-dev.firebasestorage.app"
+    "project_number": "726464864566",
+    "project_id": "burpeebata",
+    "storage_bucket": "burpeebata.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:815039019028:android:f8256fbc4226e534290f01",
+        "mobilesdk_app_id": "1:726464864566:android:6d06c460175d3fbb931397",
         "android_client_info": {
           "package_name": "com.burpeebata.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDUwmWkfrCPqCY3GkdoQisLYytIPULmTgE"
+          "current_key": "AIzaSyBwMuIejR4uFtFhi0oSM9FRoj8yJ8GrYQE"
         }
       ],
       "services": {

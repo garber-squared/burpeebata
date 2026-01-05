@@ -30,18 +30,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     List<Workout> workouts;
 
+    debugPrint('=== HistoryScreen: Loading workouts ===');
+    debugPrint('User authenticated: ${authProvider.isAuthenticated}');
+    debugPrint('User is anonymous: ${authProvider.isAnonymous}');
+    debugPrint('User ID: ${authProvider.user?.uid}');
+    debugPrint('User email: ${authProvider.user?.email}');
+
     // If user is authenticated and not anonymous, load from Firestore
     if (authProvider.isAuthenticated && !authProvider.isAnonymous) {
+      debugPrint('Attempting to load workouts from Firestore...');
       try {
         workouts = await _workoutService.getWorkouts(authProvider.user!.uid);
+        debugPrint('Successfully loaded ${workouts.length} workouts from Firestore');
       } catch (e) {
         // Fall back to local storage if Firestore fails
         debugPrint('Failed to load workouts from Firestore: $e');
+        debugPrint('Falling back to local storage...');
         workouts = await StorageService.getWorkouts();
+        debugPrint('Loaded ${workouts.length} workouts from local storage');
       }
     } else {
       // For anonymous/guest users, load from local storage
+      debugPrint('Loading from local storage (user is anonymous or not authenticated)...');
       workouts = await StorageService.getWorkouts();
+      debugPrint('Loaded ${workouts.length} workouts from local storage');
     }
 
     setState(() {
