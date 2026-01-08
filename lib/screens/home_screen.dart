@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Align(
             alignment: Alignment.topLeft,
             child: Text(
-              'v1.1.0',
+              'v1.2.0',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
