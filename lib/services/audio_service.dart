@@ -107,7 +107,7 @@ class AudioService {
       await _endOfRestPlayer.setPlaybackRate(speedMultiplier);
     }
 
-    await _endOfRestPlayer.play(AssetSource('audio/end_of_rest.wav'));
+    await _endOfRestPlayer.play(AssetSource('audio/end_of_rest_with_pulses.wav'));
   }
 
   /// Legacy methods for backward compatibility
