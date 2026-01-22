@@ -35,6 +35,8 @@ doctor:
 	docker compose exec flutter flutter doctor
 
 apk:
+	@echo "Incrementing version..."
+	@./scripts/increment_version.sh
 	@echo "Building PRODUCTION APK with production Firebase (burpeebata)..."
 	docker compose exec flutter flutter build apk --release --dart-define=PRODUCTION=true --verbose
 

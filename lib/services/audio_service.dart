@@ -10,6 +10,7 @@ class AudioService {
   final AudioPlayer _bellPlayer = AudioPlayer();
   final AudioPlayer _pingPlayer = AudioPlayer();
   final AudioPlayer _victoryPlayer = AudioPlayer();
+  final AudioPlayer _endOfRestPlayer = AudioPlayer();
 
   bool _isInitialized = false;
 
@@ -22,25 +23,32 @@ class AudioService {
     await _bellPlayer.setReleaseMode(ReleaseMode.stop);
     await _pingPlayer.setReleaseMode(ReleaseMode.stop);
     await _victoryPlayer.setReleaseMode(ReleaseMode.stop);
+    await _endOfRestPlayer.setReleaseMode(ReleaseMode.stop);
 
     _isInitialized = true;
   }
 
   /// Play countdown beep with escalating pitch
   /// Design System v2: Rising pitch creates urgency
+  /// Uses last_rep_pulse.wav for final second, rep_pulse.wav for earlier seconds
   Future<void> playCountdownBeep({int secondsRemaining = 3}) async {
     await _beepPlayer.stop();
 
-    // Escalate pitch based on urgency (3s = 1.0x, 2s = 1.1x, 1s = 1.2x)
+    // Use distinct sound for last second, regular pulse for earlier seconds
+    final audioFile = secondsRemaining == 1
+        ? 'audio/last_rep_pulse.wav'
+        : 'audio/rep_pulse.wav';
+
+    // Slight pitch escalation for urgency
     final playbackRate = switch (secondsRemaining) {
       3 => 1.0,
-      2 => 1.1,
-      1 => 1.2,
+      2 => 1.05,
+      1 => 1.1,
       _ => 1.0,
     };
 
     await _beepPlayer.setPlaybackRate(playbackRate);
-    await _beepPlayer.play(AssetSource('audio/countdown_beep.mp3'));
+    await _beepPlayer.play(AssetSource(audioFile));
   }
 
   /// Work start: Sharp, high-urgency signal
@@ -48,7 +56,7 @@ class AudioService {
   Future<void> playWorkStart() async {
     await _whistlePlayer.stop();
     await _whistlePlayer.setPlaybackRate(1.0);
-    await _whistlePlayer.play(AssetSource('audio/whistle.mp3'));
+    await _whistlePlayer.play(AssetSource('audio/start_set_whistle.wav'));
   }
 
   /// Rest start: Lower, softer signal
@@ -58,14 +66,14 @@ class AudioService {
     // Lower pitch for rest (90% speed = lower tone)
     await _pingPlayer.setPlaybackRate(0.9);
     await _pingPlayer.setVolume(0.7); // Softer volume
-    await _pingPlayer.play(AssetSource('audio/ping.mp3'));
+    await _pingPlayer.play(AssetSource('audio/rep_pulse.wav'));
   }
 
-  /// Set/phase completion: Boxing bell
+  /// Set/phase completion: End of set sound
   Future<void> playPhaseComplete() async {
     await _bellPlayer.stop();
     await _bellPlayer.setPlaybackRate(1.0);
-    await _bellPlayer.play(AssetSource('audio/boxing_bell.mp3'));
+    await _bellPlayer.play(AssetSource('audio/end_of_set.wav'));
   }
 
   /// Rep tick: Subtle progress indicator
@@ -73,18 +81,33 @@ class AudioService {
     await _pingPlayer.stop();
     await _pingPlayer.setPlaybackRate(1.0);
     await _pingPlayer.setVolume(0.5); // Quieter for non-critical feedback
-    await _pingPlayer.play(AssetSource('audio/ping.mp3'));
+    await _pingPlayer.play(AssetSource('audio/rep_pulse.wav'));
   }
 
   /// Victory fanfare: Celebratory sound for workout completion
-  /// TODO: Add a proper victory trumpet sound file (audio/victory.mp3)
-  /// For now, uses whistle at higher pitch for triumphant effect
   Future<void> playVictory() async {
     await _victoryPlayer.stop();
-    // High pitch for celebration (1.3x speed = triumphant tone)
-    await _victoryPlayer.setPlaybackRate(1.3);
+    await _victoryPlayer.setPlaybackRate(1.0);
     await _victoryPlayer.setVolume(1.0); // Full volume for celebration
-    await _victoryPlayer.play(AssetSource('audio/whistle.mp3'));
+    await _victoryPlayer.play(AssetSource('audio/end_of_workout.wav'));
+  }
+
+  /// End of rest warning: Plays during last 3 seconds (or less) of rest period
+  /// If rest >= 3 seconds: plays full audio
+  /// If rest < 3 seconds: plays from appropriate starting point
+  Future<void> playEndOfRest({required int restDuration}) async {
+    await _endOfRestPlayer.stop();
+    await _endOfRestPlayer.setPlaybackRate(1.0);
+    await _endOfRestPlayer.setVolume(1.0);
+
+    // For rest periods < 3 seconds, adjust playback speed to fit duration
+    // This allows the sound to compress naturally into shorter rest periods
+    if (restDuration < 3) {
+      final speedMultiplier = 3.0 / restDuration;
+      await _endOfRestPlayer.setPlaybackRate(speedMultiplier);
+    }
+
+    await _endOfRestPlayer.play(AssetSource('audio/end_of_rest_with_pulses.wav'));
   }
 
   /// Legacy methods for backward compatibility
@@ -103,6 +126,7 @@ class AudioService {
     _bellPlayer.dispose();
     _pingPlayer.dispose();
     _victoryPlayer.dispose();
+    _endOfRestPlayer.dispose();
     _isInitialized = false;
   }
 }

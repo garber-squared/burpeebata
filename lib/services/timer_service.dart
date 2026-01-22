@@ -24,6 +24,7 @@ class TimerService extends ChangeNotifier {
   int _initialCountdownSeconds = 10;
   int _elapsedWorkoutSeconds = 0;
   bool _workoutStarted = false;
+  bool _endOfRestPlayed = false;
   final AudioService _audioService;
 
   TimerService({AudioService? audioService})
@@ -107,6 +108,7 @@ class TimerService extends ChangeNotifier {
   void _startRest() {
     _state = TimerState.rest;
     _currentCentiseconds = _restSeconds * 100;
+    _endOfRestPlayed = false; // Reset flag for new rest period
     // Play softer rest start signal (Design System v2)
     _audioService.playRestStart();
     notifyListeners();
@@ -172,9 +174,15 @@ class TimerService extends ChangeNotifier {
       if (_state == TimerState.work && secondsRemaining <= 3 && secondsRemaining > 0) {
         _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
       }
-      // Play escalating countdown beep in last 3 seconds of rest period
-      if (_state == TimerState.rest && secondsRemaining <= 3 && secondsRemaining > 0) {
-        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+      // Play end of rest sound during rest period
+      if (_state == TimerState.rest && !_endOfRestPlayed) {
+        // For rest >= 3 seconds: play when 3 seconds remain
+        // For rest < 3 seconds: play immediately (at start of rest)
+        final triggerTime = _restSeconds >= 3 ? 3 : _restSeconds;
+        if (secondsRemaining <= triggerTime && secondsRemaining > 0) {
+          _audioService.playEndOfRest(restDuration: _restSeconds);
+          _endOfRestPlayed = true;
+        }
       }
     }
 
@@ -215,6 +223,7 @@ class TimerService extends ChangeNotifier {
     _currentSet = 0;
     _elapsedWorkoutSeconds = 0;
     _workoutStarted = false;
+    _endOfRestPlayed = false;
     notifyListeners();
   }
 
