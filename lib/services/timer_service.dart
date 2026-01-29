@@ -184,8 +184,12 @@ class TimerService extends ChangeNotifier {
         _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
       }
       // Play escalating countdown beep in last 3 seconds of work period
+      // For short rests (< 3s) with more sets to come, end-of-rest audio provides countdown instead (Issue #53)
       if (_state == TimerState.work && secondsRemaining <= 3 && secondsRemaining > 0) {
-        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+        final useEndOfRestCountdown = _restSeconds < 3 && _currentSet < _totalSets;
+        if (!useEndOfRestCountdown) {
+          _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+        }
       }
       // For short rests (< 3 seconds), start end-of-rest countdown during work phase (Issue #53)
       // This ensures the 3-second countdown finishes exactly when rest ends

@@ -1061,5 +1061,147 @@ void main() {
         });
       });
     });
+
+    group('countdown beeps during work with short rest', () {
+      test('does NOT play countdown beeps during work when rest < 3 and more sets remain', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) - countdown beeps play during countdown
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          // The last 3 seconds should NOT play countdown beeps because rest < 3
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest < 3
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
+
+      test('DOES play countdown beeps during work on last set even with short rest configured', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + work 1 (10s) + rest 1 (1s)
+          async.elapse(const Duration(seconds: 14, milliseconds: 50));
+
+          // Now in second (last) work set
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentSet, equals(2));
+
+          // Reset mock to only count beeps during last work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the last work period
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps SHOULD be played during last set (no rest follows)
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 1)).called(1);
+        });
+      });
+
+      test('DOES play countdown beeps during work when rest >= 3', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps SHOULD be played during work when rest >= 3
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 1)).called(1);
+        });
+      });
+
+      test('rest = 0: no countdown beeps during work (end-of-rest audio provides countdown)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest = 0
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
+
+      test('rest = 2: no countdown beeps during work (end-of-rest audio provides countdown)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 2,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest = 2
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
+    });
   });
 }
