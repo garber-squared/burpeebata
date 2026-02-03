@@ -104,6 +104,18 @@ class MockAudioService extends _i1.Mock implements _i2.AudioService {
       ) as _i3.Future<void>);
 
   @override
+  _i3.Future<void> playEndOfRest({required int? restDuration}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #playEndOfRest,
+          [],
+          {#restDuration: restDuration},
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
   _i3.Future<void> playWhistle() => (super.noSuchMethod(
         Invocation.method(
           #playWhistle,

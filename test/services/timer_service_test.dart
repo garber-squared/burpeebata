@@ -24,6 +24,15 @@ void main() {
       when(mockAudioService.playPhaseComplete()).thenAnswer((_) async {});
       when(mockAudioService.playRepTick()).thenAnswer((_) async {});
       when(mockAudioService.playVictory()).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 0)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 1)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 2)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 3)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 4)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 5)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 10)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 15)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 20)).thenAnswer((_) async {});
 
       timerService = TimerService(audioService: mockAudioService);
     });
@@ -226,15 +235,15 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Fast-forward 1 second (5 -> 4, no beep yet)
-          async.elapse(const Duration(seconds: 1));
-          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining')));
+          // Fast-forward 1.5 seconds (still at 4+ seconds remaining, no beep yet)
+          async.elapse(const Duration(seconds: 1, milliseconds: 500));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
 
-          // At 2 seconds elapsed (5 -> 4 -> 3), beep should play
-          async.elapse(const Duration(seconds: 1));
+          // Elapse past 3 seconds remaining mark (tick fires at 2.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
           verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
 
-          // At 3 seconds elapsed (3 -> 2), another beep
+          // Elapse to 2 seconds remaining (tick fires at 1.99s remaining)
           async.elapse(const Duration(seconds: 1));
           verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
         });
@@ -246,12 +255,12 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Fast-forward past first 6 seconds (no beeps yet, at 4 seconds remaining)
-          async.elapse(const Duration(seconds: 6));
-          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining')));
+          // Fast-forward past first 6.5 seconds (at 3.5 seconds remaining, no beep yet)
+          async.elapse(const Duration(seconds: 6, milliseconds: 500));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
 
-          // At 7 seconds elapsed (10 -> ... -> 3), beep should play
-          async.elapse(const Duration(seconds: 1));
+          // Elapse past 3 seconds remaining mark (tick fires at 2.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
           verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
 
           // Continue to 2 seconds remaining
@@ -308,8 +317,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s) to start work
-          async.elapse(const Duration(seconds: 3));
+          // Elapse countdown (3s) + small buffer to transition to work
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
           // At start of 20 seconds, elapsed = 0, rep should be 1
@@ -328,10 +337,10 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s) + 4 seconds of work
+          // Elapse countdown (3s) + 4 seconds of work + buffer
           // 20s / 5 reps = 4s per rep
           // At 4s elapsed, should be on rep 2
-          async.elapse(const Duration(seconds: 7));
+          async.elapse(const Duration(seconds: 7, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(2));
@@ -368,8 +377,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown to start work
-          async.elapse(const Duration(seconds: 3));
+          // Elapse countdown + buffer to start work
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(1));
@@ -410,8 +419,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown to start work
-          async.elapse(const Duration(seconds: 3));
+          // Elapse countdown + buffer to start work
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
 
           // Should be in work state at rep 1
           expect(timerService.state, equals(TimerState.work));
@@ -433,8 +442,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s) + 4s work (first rep change at 4s)
-          async.elapse(const Duration(seconds: 7));
+          // Elapse countdown (3s) + 4s work (first rep change at 4s) + buffer
+          async.elapse(const Duration(seconds: 7, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(2));
@@ -455,8 +464,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s) + 12s work (3 rep changes at 4s, 8s, 12s)
-          async.elapse(const Duration(seconds: 15));
+          // Elapse countdown (3s) + 12s work (3 rep changes at 4s, 8s, 12s) + buffer
+          async.elapse(const Duration(seconds: 15, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
           expect(timerService.currentRep, equals(4));
@@ -477,8 +486,8 @@ void main() {
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown + some work time
-          async.elapse(const Duration(seconds: 8));
+          // Elapse countdown + some work time + buffer
+          async.elapse(const Duration(seconds: 8, milliseconds: 50));
 
           expect(timerService.state, equals(TimerState.work));
 
@@ -543,22 +552,23 @@ void main() {
             initialCountdown: 3,
             secondsPerSet: 20,
             numberOfSets: 1,
+            restBetweenSets: 5, // Explicit rest to avoid any default issues
           );
           timerService.startWorkout(config);
           async.flushMicrotasks();
 
-          // Elapse countdown (3s) + a tiny bit more to ensure all ticks process
-          async.elapse(const Duration(seconds: 3, milliseconds: 10));
-          async.flushTimers();
+          // Elapse countdown (3s) + just enough buffer to transition to work
+          // The tick fires at centiseconds % 100 == 99, which is after 10ms
+          // So 15ms should be enough to transition but not trigger first elapsed tick
+          async.elapse(const Duration(seconds: 3, milliseconds: 15));
 
           // Now in work state
           expect(timerService.state, equals(TimerState.work));
-          // Elapsed should still be 0 at exact transition
+          // Elapsed should still be 0 (tick at 0.99s remaining hasn't fired yet)
           expect(timerService.elapsedWorkoutSeconds, equals(0));
 
-          // Elapse 1 more second of work
-          async.elapse(const Duration(seconds: 1));
-          async.flushTimers();
+          // Elapse almost 1 second more - tick fires at 0.99s remaining in work
+          async.elapse(const Duration(milliseconds: 990));
 
           // Now elapsed should be 1
           expect(timerService.elapsedWorkoutSeconds, equals(1));
@@ -690,6 +700,508 @@ void main() {
       expect(TimerState.values, contains(TimerState.work));
       expect(TimerState.values, contains(TimerState.rest));
       expect(TimerState.values, contains(TimerState.finished));
+    });
+  });
+
+  group('Short rest handling (Issue #53)', () {
+    late TimerService timerService;
+    late MockAudioService mockAudioService;
+
+    setUp(() {
+      mockAudioService = MockAudioService();
+
+      when(mockAudioService.init()).thenAnswer((_) async {});
+      when(mockAudioService.playCountdownBeep(secondsRemaining: anyNamed('secondsRemaining'))).thenAnswer((_) async {});
+      when(mockAudioService.playWorkStart()).thenAnswer((_) async {});
+      when(mockAudioService.playRestStart()).thenAnswer((_) async {});
+      when(mockAudioService.playPhaseComplete()).thenAnswer((_) async {});
+      when(mockAudioService.playRepTick()).thenAnswer((_) async {});
+      when(mockAudioService.playVictory()).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 0)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 1)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 2)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 3)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 4)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 5)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 10)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 15)).thenAnswer((_) async {});
+      when(mockAudioService.playEndOfRest(restDuration: 20)).thenAnswer((_) async {});
+
+      timerService = TimerService(audioService: mockAudioService);
+    });
+
+    tearDown(() {
+      timerService.dispose();
+    });
+
+    group('rest = 0 seconds', () {
+      test('skips rest phase entirely', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s) + small buffer for transition
+          async.elapse(const Duration(seconds: 13, milliseconds: 50));
+
+          // Should go directly to second work set, not rest
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentSet, equals(2));
+
+          // Rest start sound should never be called
+          verifyNever(mockAudioService.playRestStart());
+        });
+      });
+
+      test('plays end-of-rest countdown at 3 seconds remaining in work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + 6.5 seconds of work (3.5 seconds remaining)
+          // Not yet at 3 seconds remaining tick (which fires at 2.99s remaining)
+          async.elapse(const Duration(seconds: 9, milliseconds: 500));
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 3));
+
+          // Elapse past the 3 seconds remaining mark (tick fires at 2.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(1);
+        });
+      });
+
+      test('does not play phase complete bell', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s)
+          async.elapse(const Duration(seconds: 13));
+
+          // Phase complete should not be called for short rest
+          verifyNever(mockAudioService.playPhaseComplete());
+        });
+      });
+    });
+
+    group('rest = 1 second', () {
+      test('plays end-of-rest countdown at 2 seconds remaining in work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + 7.5 seconds of work (2.5 seconds remaining)
+          // Not yet at 2 seconds remaining tick (which fires at 1.99s remaining)
+          async.elapse(const Duration(seconds: 10, milliseconds: 500));
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 3));
+
+          // Elapse past the 2 seconds remaining mark (tick fires at 1.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(1);
+        });
+      });
+
+      test('does not play phase complete bell', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s)
+          async.elapse(const Duration(seconds: 13));
+
+          // Phase complete should not be called for short rest
+          verifyNever(mockAudioService.playPhaseComplete());
+        });
+      });
+
+      test('transitions to rest phase after work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s) + a bit
+          async.elapse(const Duration(seconds: 13, milliseconds: 50));
+
+          expect(timerService.state, equals(TimerState.rest));
+        });
+      });
+
+      test('does not double-play end-of-rest during rest phase', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse entire first set + rest
+          async.elapse(const Duration(seconds: 14, milliseconds: 50));
+
+          // Should only be called once (during work phase)
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(1);
+        });
+      });
+    });
+
+    group('rest = 2 seconds', () {
+      test('plays end-of-rest countdown at 1 second remaining in work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 2,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + 8.5 seconds of work (1.5 seconds remaining)
+          // Not yet at 1 second remaining tick (which fires at 0.99s remaining)
+          async.elapse(const Duration(seconds: 11, milliseconds: 500));
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 3));
+
+          // Elapse past the 1 second remaining mark (tick fires at 0.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(1);
+        });
+      });
+
+      test('does not play phase complete bell', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 2,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s)
+          async.elapse(const Duration(seconds: 13));
+
+          // Phase complete should not be called for short rest
+          verifyNever(mockAudioService.playPhaseComplete());
+        });
+      });
+    });
+
+    group('rest = 3 seconds', () {
+      test('plays end-of-rest countdown during rest phase (not work)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 3,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s)
+          async.elapse(const Duration(seconds: 13));
+
+          // End of rest should not be played during work when rest >= 3
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 3));
+
+          // Elapse into rest phase and past 3 seconds remaining (tick fires at 2.99s)
+          async.elapse(const Duration(milliseconds: 110));
+          expect(timerService.state, equals(TimerState.rest));
+
+          // Now end of rest should play (at 3 seconds remaining in rest, which is immediately for 3s rest)
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(1);
+        });
+      });
+
+      test('plays phase complete bell', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 3,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s) + a bit
+          async.elapse(const Duration(seconds: 13, milliseconds: 50));
+
+          // Phase complete should be called for rest >= 3
+          verify(mockAudioService.playPhaseComplete()).called(1);
+        });
+      });
+    });
+
+    group('rest > 3 seconds (normal case)', () {
+      test('plays phase complete bell at end of work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s) + a bit
+          async.elapse(const Duration(seconds: 13, milliseconds: 50));
+
+          verify(mockAudioService.playPhaseComplete()).called(1);
+        });
+      });
+
+      test('plays end-of-rest at 3 seconds remaining in rest', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + work (10s) + 1.5 seconds of rest (3.5 remaining)
+          // Not yet at 3 seconds remaining tick
+          async.elapse(const Duration(seconds: 14, milliseconds: 500));
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 5));
+
+          // Elapse past the 3 seconds remaining mark (tick fires at 2.99s remaining)
+          async.elapse(const Duration(milliseconds: 600));
+          verify(mockAudioService.playEndOfRest(restDuration: 5)).called(1);
+        });
+      });
+
+      test('does not play end-of-rest during work', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + first work period (10s)
+          async.elapse(const Duration(seconds: 13));
+
+          // End of rest should not be called during work when rest > 3
+          verifyNever(mockAudioService.playEndOfRest(restDuration: 5));
+        });
+      });
+    });
+
+    group('multiple sets with short rest', () {
+      test('plays end-of-rest during each work phase except last', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 3,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Run the entire workout:
+          // - Countdown: 3s
+          // - Work 1: 10s, Rest 1: 1s
+          // - Work 2: 10s, Rest 2: 1s
+          // - Work 3: 10s (no rest after last set)
+          // Total: 3 + 10 + 1 + 10 + 1 + 10 = 35s + buffer
+          async.elapse(const Duration(seconds: 36));
+
+          expect(timerService.state, equals(TimerState.finished));
+
+          // End-of-rest should be called exactly twice:
+          // - Once during work 1 (for rest 1)
+          // - Once during work 2 (for rest 2)
+          // - NOT during work 3 (it's the last set, no rest follows)
+          verify(mockAudioService.playEndOfRest(restDuration: 3)).called(2);
+        });
+      });
+    });
+
+    group('countdown beeps during work with short rest', () {
+      test('does NOT play countdown beeps during work when rest < 3 and more sets remain', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) - countdown beeps play during countdown
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          // The last 3 seconds should NOT play countdown beeps because rest < 3
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest < 3
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
+
+      test('DOES play countdown beeps during work on last set even with short rest configured', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 1,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s) + work 1 (10s) + rest 1 (1s)
+          async.elapse(const Duration(seconds: 14, milliseconds: 50));
+
+          // Now in second (last) work set
+          expect(timerService.state, equals(TimerState.work));
+          expect(timerService.currentSet, equals(2));
+
+          // Reset mock to only count beeps during last work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the last work period
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps SHOULD be played during last set (no rest follows)
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 1)).called(1);
+        });
+      });
+
+      test('DOES play countdown beeps during work when rest >= 3', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 5,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps SHOULD be played during work when rest >= 3
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 3)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 2)).called(1);
+          verify(mockAudioService.playCountdownBeep(secondsRemaining: 1)).called(1);
+        });
+      });
+
+      test('rest = 0: no countdown beeps during work (end-of-rest audio provides countdown)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 0,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest = 0
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
+
+      test('rest = 2: no countdown beeps during work (end-of-rest audio provides countdown)', () {
+        fakeAsync((async) {
+          const config = WorkoutConfig(
+            initialCountdown: 3,
+            secondsPerSet: 10,
+            numberOfSets: 2,
+            restBetweenSets: 2,
+          );
+          timerService.startWorkout(config);
+          async.flushMicrotasks();
+
+          // Elapse countdown (3s)
+          async.elapse(const Duration(seconds: 3, milliseconds: 50));
+
+          // Reset mock to only count beeps during work phase
+          clearInteractions(mockAudioService);
+
+          // Elapse through the first work period (10s)
+          async.elapse(const Duration(seconds: 10));
+
+          // Countdown beeps should NOT be played during work when rest = 2
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 3));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 2));
+          verifyNever(mockAudioService.playCountdownBeep(secondsRemaining: 1));
+        });
+      });
     });
   });
 }

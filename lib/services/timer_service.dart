@@ -25,6 +25,7 @@ class TimerService extends ChangeNotifier {
   int _elapsedWorkoutSeconds = 0;
   bool _workoutStarted = false;
   bool _endOfRestPlayed = false;
+  bool _endOfRestPlayedDuringWork = false; // Track if end-of-rest was played early during work phase
   final AudioService _audioService;
 
   TimerService({AudioService? audioService})
@@ -109,6 +110,8 @@ class TimerService extends ChangeNotifier {
     _state = TimerState.rest;
     _currentCentiseconds = _restSeconds * 100;
     _endOfRestPlayed = false; // Reset flag for new rest period
+    // Note: _endOfRestPlayedDuringWork is intentionally NOT reset here
+    // It tracks if end-of-rest was already played during the preceding work phase
     // Play softer rest start signal (Design System v2)
     _audioService.playRestStart();
     notifyListeners();
@@ -132,17 +135,27 @@ class TimerService extends ChangeNotifier {
         _startWork();
         break;
       case TimerState.work:
-        // Play phase completion sound (Design System v2)
-        _audioService.playPhaseComplete();
+        // Only play phase completion sound if rest >= 3 seconds (Issue #53)
+        // For short rests, the end-of-rest countdown provides sufficient audio feedback
+        if (_restSeconds >= 3) {
+          _audioService.playPhaseComplete();
+        }
         if (_currentSet < _totalSets) {
           _currentSet++;
-          _startRest();
+          // Handle rest = 0: skip rest phase entirely (Issue #53)
+          if (_restSeconds == 0) {
+            _endOfRestPlayedDuringWork = false; // Reset for next work phase
+            _startWork();
+          } else {
+            _startRest();
+          }
         } else {
           _finish();
         }
         break;
       case TimerState.rest:
         // Go directly to work - countdown was integrated into last 3 seconds of rest
+        _endOfRestPlayedDuringWork = false; // Reset for next work phase
         _startWork();
         break;
       case TimerState.idle:
@@ -171,14 +184,31 @@ class TimerService extends ChangeNotifier {
         _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
       }
       // Play escalating countdown beep in last 3 seconds of work period
+      // For short rests (< 3s) with more sets to come, end-of-rest audio provides countdown instead (Issue #53)
       if (_state == TimerState.work && secondsRemaining <= 3 && secondsRemaining > 0) {
-        _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+        final useEndOfRestCountdown = _restSeconds < 3 && _currentSet < _totalSets;
+        if (!useEndOfRestCountdown) {
+          _audioService.playCountdownBeep(secondsRemaining: secondsRemaining);
+        }
       }
-      // Play end of rest sound during rest period
-      if (_state == TimerState.rest && !_endOfRestPlayed) {
+      // For short rests (< 3 seconds), start end-of-rest countdown during work phase (Issue #53)
+      // This ensures the 3-second countdown finishes exactly when rest ends
+      // rest = 2: trigger at 1 second remaining (countdown plays 1s work + 2s rest)
+      // rest = 1: trigger at 2 seconds remaining (countdown plays 2s work + 1s rest)
+      // rest = 0: trigger at 3 seconds remaining (countdown plays 3s work + 0s rest)
+      if (_state == TimerState.work && _restSeconds < 3 && _restSeconds >= 0 &&
+          !_endOfRestPlayedDuringWork && _currentSet < _totalSets) {
+        final triggerAtSecondsRemaining = 3 - _restSeconds;
+        if (secondsRemaining == triggerAtSecondsRemaining) {
+          _audioService.playEndOfRest(restDuration: 3); // Always play full 3-second audio
+          _endOfRestPlayedDuringWork = true;
+        }
+      }
+      // Play end of rest sound during rest period (only if not already played during work)
+      // For short rests (< 3s), the sound was already triggered during work phase (Issue #53)
+      if (_state == TimerState.rest && !_endOfRestPlayed && !_endOfRestPlayedDuringWork) {
         // For rest >= 3 seconds: play when 3 seconds remain
-        // For rest < 3 seconds: play immediately (at start of rest)
-        final triggerTime = _restSeconds >= 3 ? 3 : _restSeconds;
+        final triggerTime = 3;
         if (secondsRemaining <= triggerTime && secondsRemaining > 0) {
           _audioService.playEndOfRest(restDuration: _restSeconds);
           _endOfRestPlayed = true;
@@ -224,6 +254,7 @@ class TimerService extends ChangeNotifier {
     _elapsedWorkoutSeconds = 0;
     _workoutStarted = false;
     _endOfRestPlayed = false;
+    _endOfRestPlayedDuringWork = false;
     notifyListeners();
   }
 
