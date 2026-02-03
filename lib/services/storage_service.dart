@@ -9,6 +9,7 @@ class StorageService {
   static const String _templatesKey = 'workout_templates';
   static const String _lastUsedConfigKey = 'last_used_config';
   static const String _powerUserModeKey = 'power_user_mode';
+  static const String _dndDuringWorkoutKey = 'dnd_during_workout';
 
   static Future<void> saveWorkout(Workout workout) async {
     final prefs = await SharedPreferences.getInstance();
@@ -136,5 +137,18 @@ class StorageService {
   static Future<bool> isPowerUserMode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_powerUserModeKey) ?? false;
+  }
+
+  /// Enable/disable Do Not Disturb during workouts (Android only)
+  static Future<void> setDndDuringWorkout(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dndDuringWorkoutKey, enabled);
+  }
+
+  /// Check if DND during workout is enabled
+  /// Defaults to false for first-time users
+  static Future<bool> isDndDuringWorkout() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_dndDuringWorkoutKey) ?? false;
   }
 }

@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.burpeebata.app">
+
+    <!-- Required for Do Not Disturb mode control during workouts -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
    <application
         android:label="burpeebata"
         android:name="${applicationName}"
