@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:burpeebata/screens/home_screen.dart';
 import '../helpers/firebase_test_helper.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
   Widget createTestWidget() {
     return wrapWithProviders(
       const MaterialApp(
