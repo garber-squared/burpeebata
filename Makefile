@@ -1,4 +1,4 @@
-.PHONY: up up-build build stop down clean restart logs ps doctor apk test start build-android adb-install
+.PHONY: up up-build build stop down clean restart logs ps doctor apk test start build-android adb-install appbundle appbundle-dev
 
 start:
 	/bin/bash bin/startup.sh
@@ -67,3 +67,13 @@ build-android:
 
 adb-install:
 	adb install -r build/app/outputs/flutter-apk/app-release.apk
+
+appbundle:
+	@echo "Incrementing version..."
+	@./scripts/increment_version.sh
+	@echo "Building PRODUCTION app bundle with production Firebase (burpeebata)..."
+	docker compose exec flutter flutter build appbundle --release --dart-define=PRODUCTION=true --verbose
+
+appbundle-dev:
+	@echo "Building DEVELOPMENT app bundle with dev Firebase (burpeebata-dev)..."
+	docker compose exec flutter flutter build appbundle --release --verbose
