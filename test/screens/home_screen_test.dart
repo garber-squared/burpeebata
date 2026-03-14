@@ -62,6 +62,7 @@ void main() {
     group('Initial Display', () {
       testWidgets('displays all number input fields with default values', (tester) async {
         await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
         // Verify all labels are present
         expect(find.text('Reps per Set'), findsOneWidget);
@@ -83,6 +84,7 @@ void main() {
 
       testWidgets('displays plus and minus buttons for each input', (tester) async {
         await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
         // There should be 6 add icons total (5 for inputs + 1 for "Create New" button)
         // and 5 remove icons (one per input)
