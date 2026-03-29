@@ -274,6 +274,28 @@ void main() {
       });
     });
 
+    group('DND during workout setting', () {
+      test('defaults to false', () async {
+        final isDndEnabled = await StorageService.isDndDuringWorkout();
+        expect(isDndEnabled, isFalse);
+      });
+
+      test('can be enabled', () async {
+        await StorageService.setDndDuringWorkout(true);
+
+        final isDndEnabled = await StorageService.isDndDuringWorkout();
+        expect(isDndEnabled, isTrue);
+      });
+
+      test('can be disabled', () async {
+        await StorageService.setDndDuringWorkout(true);
+        await StorageService.setDndDuringWorkout(false);
+
+        final isDndEnabled = await StorageService.isDndDuringWorkout();
+        expect(isDndEnabled, isFalse);
+      });
+    });
+
     group('template and workout isolation', () {
       test('templates and workouts are stored separately', () async {
         final template = WorkoutTemplate(

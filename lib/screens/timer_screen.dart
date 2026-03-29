@@ -8,6 +8,7 @@ import '../models/burpee_type.dart';
 import '../services/timer_service.dart';
 import '../services/storage_service.dart';
 import '../services/workout_service.dart';
+import '../services/dnd_service.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
@@ -25,6 +26,7 @@ class TimerScreen extends StatefulWidget {
 class _TimerScreenState extends State<TimerScreen> {
   final TimerService _timerService = TimerService();
   final WorkoutService _workoutService = WorkoutService();
+  final DndService _dndService = DndService();
   bool _isPaused = false;
   int _lastWholeSeconds = -1;
   TimerState _lastState = TimerState.idle;
@@ -34,7 +36,15 @@ class _TimerScreenState extends State<TimerScreen> {
     super.initState();
     WakelockPlus.enable();
     _timerService.addListener(_onTimerUpdate);
+    _initDnd();
     _startWorkout();
+  }
+
+  Future<void> _initDnd() async {
+    final dndEnabled = await StorageService.isDndDuringWorkout();
+    if (dndEnabled) {
+      await _dndService.enableDnd();
+    }
   }
 
   Future<void> _startWorkout() async {
@@ -44,6 +54,7 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
+    _dndService.restoreDnd();
     _timerService.removeListener(_onTimerUpdate);
     _timerService.dispose();
     super.dispose();

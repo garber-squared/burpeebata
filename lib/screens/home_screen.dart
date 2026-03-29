@@ -6,6 +6,7 @@ import '../models/workout_config.dart';
 import '../models/workout_template.dart';
 import '../providers/auth_provider.dart';
 import '../services/storage_service.dart';
+import '../services/dnd_service.dart';
 import 'timer_screen.dart';
 import 'history_screen.dart';
 import 'saved_workouts_screen.dart';
@@ -28,7 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   BurpeeType _selectedType = BurpeeType.militarySixCount;
   WorkoutTemplate? _loadedTemplate;
   bool _powerUserMode = false;
+  bool _dndDuringWorkout = false;
   bool _isLoading = true;
+
+  final DndService _dndService = DndService();
 
   WorkoutConfig get _config => _configs[_selectedType]!;
 
@@ -45,11 +49,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // Load power user mode preference
     final powerUserMode = await StorageService.isPowerUserMode();
 
+    // Load DND during workout preference
+    final dndDuringWorkout = await StorageService.isDndDuringWorkout();
+
     // Load last-used configuration
     final lastConfig = await StorageService.getLastUsedConfig();
 
     setState(() {
       _powerUserMode = powerUserMode;
+      _dndDuringWorkout = dndDuringWorkout;
       if (lastConfig != null) {
         _selectedType = lastConfig.burpeeType;
         _configs[lastConfig.burpeeType] = lastConfig;
@@ -76,6 +84,71 @@ class _HomeScreenState extends State<HomeScreen> {
           newValue
               ? 'Power User Mode enabled - Last workout auto-loads'
               : 'Power User Mode disabled',
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  /// Toggle Do Not Disturb during workout (Android only)
+  Future<void> _toggleDndDuringWorkout() async {
+    // Check if DND is supported on this platform
+    if (!_dndService.isSupported) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Do Not Disturb is only available on Android'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // If enabling, check for permission first
+    if (!_dndDuringWorkout) {
+      final hasPermission = await _dndService.hasPermission();
+      if (!hasPermission) {
+        if (!mounted) return;
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'To enable Do Not Disturb during workouts, '
+              'the app needs permission to modify notification settings.\n\n'
+              'Would you like to open settings to grant this permission?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('CANCEL'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('OPEN SETTINGS'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldRequest == true) {
+          await _dndService.requestPermission();
+        }
+        return;
+      }
+    }
+
+    final newValue = !_dndDuringWorkout;
+    await StorageService.setDndDuringWorkout(newValue);
+    setState(() => _dndDuringWorkout = newValue);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          newValue
+              ? 'Do Not Disturb will be enabled during workouts'
+              : 'Do Not Disturb during workouts disabled',
         ),
         backgroundColor: Colors.green,
       ),
@@ -148,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Align(
             alignment: Alignment.topLeft,
             child: Text(
-              'v1.2.0',
+              'v1.3.0',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
@@ -158,6 +231,16 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('BurpeeBata'),
         centerTitle: true,
         actions: [
+          // Do Not Disturb toggle (Android only)
+          if (_dndService.isSupported)
+            IconButton(
+              icon: Icon(
+                _dndDuringWorkout ? Icons.do_not_disturb_on : Icons.do_not_disturb_off,
+                color: _dndDuringWorkout ? Colors.red : null,
+              ),
+              tooltip: _dndDuringWorkout ? 'DND During Workout (ON)' : 'DND During Workout (OFF)',
+              onPressed: _toggleDndDuringWorkout,
+            ),
           // Power User Mode toggle
           IconButton(
             icon: Icon(
